@@ -1,434 +1,500 @@
 <!DOCTYPE html>
+
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Staff Portal</title>
-  <link rel="stylesheet" href="css/style.css"/>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Staff Portal</title>
+<link href="css/style.css" rel="stylesheet"/>
 </head>
 <body>
-  <div class="app-shell">
-    <aside class="sidebar" id="sidebar">
-      <div class="sidebar-header">
-        <div class="sidebar-brand">
-          <span class="sidebar-brand-mark">SL</span>
-          <div class="sidebar-brand-text">
-            <strong>SMARTLINKX</strong>
-            <span>Staff Portal</span>
-          </div>
-        </div>
-        <button type="button" class="sidebar-toggle sidebar-toggle-desktop" id="sidebarCollapseBtn" aria-label="Collapse sidebar">☰</button>
-      </div>
+<div class="app-shell">
+<aside class="sidebar" id="sidebar">
+<div class="sidebar-header">
+<div class="sidebar-brand">
+<span class="sidebar-brand-mark">SL</span>
+<div class="sidebar-brand-text">
+<strong>SMARTLINKX</strong>
+<span>Staff Portal</span>
+</div>
+</div>
+<button aria-label="Collapse sidebar" class="sidebar-toggle sidebar-toggle-desktop" id="sidebarCollapseBtn" type="button">☰</button>
+</div>
+<nav class="sidebar-nav">
+<div class="nav-group">
+<button class="nav-link nav-link-main active" data-section="dashboard" type="button">
+<span class="nav-parent-main">
+<span class="nav-icon">
+<svg fill="none" stroke="currentColor" stroke-width="1.8" viewbox="0 0 24 24">
+<path d="M3 13h8V3H3z"></path>
+<path d="M13 21h8V11h-8z"></path>
+<path d="M13 3h8v4h-8z"></path>
+<path d="M3 17h8v4H3z"></path>
+</svg>
+</span>
+<span class="nav-label">Dashboard</span>
+</span>
+</button>
+</div>
+<div class="nav-group">
+<button aria-expanded="true" class="nav-parent" data-dropdown="accounts" type="button">
+<span class="nav-parent-main">
+<span class="nav-icon">
+<svg fill="none" stroke="currentColor" stroke-width="1.8" viewbox="0 0 24 24">
+<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path>
+<circle cx="9" cy="7" r="4"></circle>
+<path d="M22 21v-2a4 4 0 0 0-3-3.87"></path>
+<path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+</svg>
+</span>
+<span class="nav-label">Accounts</span>
+</span>
+<span class="nav-caret">▾</span>
+</button>
+<div class="nav-submenu open" data-submenu="accounts">
+<button class="nav-link active" data-section="new-user" type="button">New User</button>
+<button class="nav-link" data-section="subscribers" type="button">Subscribers</button>
+</div>
+</div>
+<div class="nav-group">
+<button aria-expanded="true" class="nav-parent" data-dropdown="accounting" type="button">
+<span class="nav-parent-main">
+<span class="nav-icon">
+<svg fill="none" stroke="currentColor" stroke-width="1.8" viewbox="0 0 24 24">
+<path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
+<path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
+<path d="M8 7h8"></path>
+<path d="M8 11h8"></path>
+<path d="M8 15h5"></path>
+</svg>
+</span>
+<span class="nav-label">Accounting</span>
+</span>
+<span class="nav-caret">▾</span>
+</button>
+<div class="nav-submenu open" data-submenu="accounting">
+<button class="nav-link" data-section="billing" type="button">Billing Management</button>
+<button class="nav-link" data-section="payments" type="button">Payments</button>
+<button class="nav-link" data-section="ledger" type="button">Account Ledger</button>
+<button class="nav-link" data-section="expenses" type="button">Expenses</button><button class="nav-link" data-section="income-statement" type="button">Income Statement</button></div>
+</div>
+</nav>
+</aside>
+<div class="mobile-overlay" id="mobileOverlay"></div>
+<div class="main-shell">
+<header class="topbar app-topbar">
+<div class="container">
+<div class="topbar-left">
+<button aria-label="Open menu" class="mobile-menu-btn" id="mobileMenuBtn" type="button">☰</button>
+<div>
+<div class="topbar-title">Staff Portal</div>
+<div class="muted topbar-subtitle" id="welcomeText"></div>
+</div>
+</div>
+<div class="topbar-right">
+<button class="btn-light" id="logoutBtn">Logout</button>
+</div>
+</div>
+</header>
+<main class="content-shell">
+<div class="container">
+<section class="content-section active" id="section-dashboard">
+<div class="cards section-summary">
+<div class="stat-card">
+<div class="stat-label">Overdue</div>
+<div class="stat-value" id="cardOverdue">0</div>
+</div>
+<div class="stat-card">
+<div class="stat-label">Due Today</div>
+<div class="stat-value" id="cardDueToday">0</div>
+</div>
+<div class="stat-card">
+<div class="stat-label">Due Soon</div>
+<div class="stat-value" id="cardDueSoon">0</div>
+</div>
+</div>
+</section>
+<section class="content-section" id="section-new-user">
+<div class="card">
+<h2 id="formTitle">Add New Subscriber</h2>
+<form id="addSubscriberForm">
+<input id="subscriber_id" type="hidden"/>
+<div class="form-grid">
+<div class="form-group">
+<label>Account No</label>
+<input id="account_no" placeholder="Auto-generated" readonly="" type="text"/>
+</div>
+<div class="form-group">
+<label>Full Name</label>
+<input id="full_name" required="" type="text"/>
+</div>
+<div class="form-group">
+<label>Address</label>
+<input id="address" type="text"/>
+</div>
+<div class="form-group">
+<label>Contact Number</label>
+<input id="contact_number" type="text"/>
+</div>
+<div class="form-group">
+<label>Email</label>
+<input id="email" type="email"/>
+</div>
+<div class="form-group">
+<label>Plan Name</label>
+<input id="plan_name" required="" type="text"/>
+</div>
+<div class="form-group">
+<label>Monthly Fee</label>
+<input id="monthly_fee" required="" type="number"/>
+</div>
+<div class="form-group">
+<label>Installation Date</label>
+<input id="installation_date" required="" type="date"/>
+</div>
+<div class="form-group">
+<label>Due Day</label>
+<input id="due_day" max="31" min="1" placeholder="Auto from installation date" readonly="" type="number"/>
+</div>
+<div class="form-group">
+<label>Status</label>
+<select id="status">
+<option value="ACTIVE">ACTIVE</option>
+<option value="TEMP DISABLED">TEMP DISABLED</option>
+<option value="DISCONNECTED">DISCONNECTED</option>
+</select>
+</div>
+<div class="form-group">
+<label>Portal Password</label>
+<input id="portal_password" type="text"/>
+</div>
+<div class="form-group">
+<label>MAC Address</label>
+<input id="MAC_address" type="text"/>
+</div>
+<div class="form-group">
+<label>Assigned IP</label>
+<input id="assigned_ip" type="text"/>
+</div>
+<div class="form-group">
+<label>OLT Port</label>
+<input id="olt_port" type="text"/>
+</div>
+<div class="form-group">
+<label>ONU Serial</label>
+<input id="onu_serial" type="text"/>
+</div>
+</div>
+<div class="form-group">
+<label>Remarks</label>
+<textarea id="remarks"></textarea>
+</div>
+<div style="margin-top: 15px;">
+<button class="btn-primary" id="saveBtn" type="submit">Save Subscriber</button>
+<button class="btn-light" id="cancelEditBtn" style="display:none;" type="button">Cancel</button>
+</div>
+<div class="message" id="formMessage"></div>
+</form>
+</div>
+</section>
+<section class="content-section" id="section-subscribers">
+<div class="card">
+<div class="toolbar">
+<h2>Subscribers</h2>
+<input id="searchInput" placeholder="Search..." type="text"/>
+</div>
+<div class="message" id="pageMessage"></div>
+<div class="table-wrap">
+<table>
+<thead>
+<tr>
+<th>Action</th>
+<th>Account No</th>
+<th>Full Name</th>
+<th>Plan</th>
+<th>Monthly Fee</th>
+<th>Status</th>
+<th>Contact</th>
+<th>IP</th>
+<th>MAC</th>
+<th>OLT</th>
+<th>ONU</th>
+</tr>
+</thead>
+<tbody id="subscriberTableBody">
+<tr><td class="empty-cell" colspan="11">Loading...</td></tr>
+</tbody>
+</table>
+</div>
+</div>
+</section>
+<section class="content-section" id="section-billing">
+<div class="card">
+<div class="toolbar">
+<h2 style="margin:0;">Billing Management</h2>
+</div>
+<div class="message" id="billingMessage"></div>
+<div class="table-wrap">
+<table>
+<thead>
+<tr>
+<th>Billing ID</th>
+<th>Account No</th>
+<th>Name</th>
+<th>Plan</th>
+<th>Month</th>
+<th>Due Date</th>
+<th>Amount</th>
+<th>Status</th>
+</tr>
+</thead>
+<tbody id="billingTableBody">
+<tr><td class="empty-cell" colspan="8">No billing data.</td></tr>
+</tbody>
+</table>
+</div>
+</div>
+</section>
+<section class="content-section" id="section-payments">
+<div class="card">
+<div class="toolbar">
+<h2 style="margin:0;">Payments</h2>
+</div>
+<form id="paymentForm" style="margin-bottom:15px;">
+<div class="form-grid">
+<div class="form-group">
+<label>Account No</label>
+<input id="payment_account_no" required="" type="text"/>
+</div>
+<div class="form-group">
+<label>Subscriber Name</label>
+<input id="payment_full_name" required="" type="text"/>
+</div>
+<div class="form-group">
+<label>Payment Date</label>
+<input id="payment_date" required="" type="date"/>
+</div>
+<div class="form-group">
+<label>Amount</label>
+<input id="payment_amount" required="" step="0.01" type="number"/>
+</div>
+<div class="form-group">
+<label>Payment Method</label>
+<select id="payment_method" required="">
+<option value="">Select</option>
+<option value="CASH">CASH</option>
+<option value="GCASH">GCASH</option>
+<option value="BANK TRANSFER">BANK TRANSFER</option>
+<option value="ONLINE">ONLINE</option>
+</select>
+</div>
+<div class="form-group">
+<label>Reference</label>
+<input id="payment_reference" type="text"/>
+</div>
+</div>
+<div class="form-group" style="margin-top:14px;">
+<label>Remarks</label>
+<textarea id="payment_remarks"></textarea>
+</div>
+<div style="margin-top:14px;">
+<button class="btn-primary" type="submit">Save Payment</button>
+</div>
+<div class="message" id="paymentMessage"></div>
+</form>
+<div class="table-wrap">
+<table>
+<thead>
+<tr>
+<th>Payment ID</th>
+<th>Billing ID</th>
+<th>Account No</th>
+<th>Name</th>
+<th>Payment Date</th>
+<th>Amount</th>
+<th>Method</th>
+<th>Reference</th>
+</tr>
+</thead>
+<tbody id="paymentsTableBody">
+<tr><td class="empty-cell" colspan="8">No payment data.</td></tr>
+</tbody>
+</table>
+</div>
+</div>
+</section>
 
-      <nav class="sidebar-nav">
-        <div class="nav-group">
-          <button type="button" class="nav-link nav-link-main active" data-section="dashboard">
-            <span class="nav-parent-main">
-              <span class="nav-icon">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
-                  <path d="M3 13h8V3H3z"></path>
-                  <path d="M13 21h8V11h-8z"></path>
-                  <path d="M13 3h8v4h-8z"></path>
-                  <path d="M3 17h8v4H3z"></path>
-                </svg>
-              </span>
-              <span class="nav-label">Dashboard</span>
-            </span>
-          </button>
-        </div>
-
-        <div class="nav-group">
-          <button type="button" class="nav-parent" data-dropdown="accounts" aria-expanded="true">
-            <span class="nav-parent-main">
-              <span class="nav-icon">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
-                  <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path>
-                  <circle cx="9" cy="7" r="4"></circle>
-                  <path d="M22 21v-2a4 4 0 0 0-3-3.87"></path>
-                  <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
-                </svg>
-              </span>
-              <span class="nav-label">Accounts</span>
-            </span>
-            <span class="nav-caret">▾</span>
-          </button>
-          <div class="nav-submenu open" data-submenu="accounts">
-            <button type="button" class="nav-link active" data-section="new-user">New User</button>
-            <button type="button" class="nav-link" data-section="subscribers">Subscribers</button>
-          </div>
-        </div>
-
-        <div class="nav-group">
-          <button type="button" class="nav-parent" data-dropdown="accounting" aria-expanded="true">
-            <span class="nav-parent-main">
-              <span class="nav-icon">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
-                  <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
-                  <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
-                  <path d="M8 7h8"></path>
-                  <path d="M8 11h8"></path>
-                  <path d="M8 15h5"></path>
-                </svg>
-              </span>
-              <span class="nav-label">Accounting</span>
-            </span>
-            <span class="nav-caret">▾</span>
-          </button>
-          <div class="nav-submenu open" data-submenu="accounting">
-            <button type="button" class="nav-link" data-section="billing">Billing Management</button>
-            <button type="button" class="nav-link" data-section="payments">Payments</button>
-            <button type="button" class="nav-link" data-section="ledger">Account Ledger</button>
-          </div>
-        </div>
-      </nav>
-    </aside>
-
-    <div class="mobile-overlay" id="mobileOverlay"></div>
-
-    <div class="main-shell">
-      <header class="topbar app-topbar">
-        <div class="container">
-          <div class="topbar-left">
-            <button type="button" class="mobile-menu-btn" id="mobileMenuBtn" aria-label="Open menu">☰</button>
-            <div>
-              <div class="topbar-title">Staff Portal</div>
-              <div id="welcomeText" class="muted topbar-subtitle"></div>
-            </div>
-          </div>
-          <div class="topbar-right">
-            <button id="logoutBtn" class="btn-light">Logout</button>
-          </div>
-        </div>
-      </header>
-
-      <main class="content-shell">
-        <div class="container">
-          <section class="content-section active" id="section-dashboard">
-            <div class="cards section-summary">
-            <div class="stat-card">
-              <div class="stat-label">Overdue</div>
-              <div id="cardOverdue" class="stat-value">0</div>
-            </div>
-            <div class="stat-card">
-              <div class="stat-label">Due Today</div>
-              <div id="cardDueToday" class="stat-value">0</div>
-            </div>
-            <div class="stat-card">
-              <div class="stat-label">Due Soon</div>
-              <div id="cardDueSoon" class="stat-value">0</div>
-            </div>
-          </div>
-          </section>
-
-          <section class="content-section" id="section-new-user">
-            <div class="card">
-              <h2 id="formTitle">Add New Subscriber</h2>
-              <form id="addSubscriberForm">
-                <input type="hidden" id="subscriber_id"/>
-
-                <div class="form-grid">
-                  <div class="form-group">
-                    <label>Account No</label>
-                    <input type="text" id="account_no" readonly placeholder="Auto-generated"/>
-                  </div>
-                  <div class="form-group">
-                    <label>Full Name</label>
-                    <input type="text" id="full_name" required/>
-                  </div>
-                  <div class="form-group">
-                    <label>Address</label>
-                    <input type="text" id="address"/>
-                  </div>
-                  <div class="form-group">
-                    <label>Contact Number</label>
-                    <input type="text" id="contact_number"/>
-                  </div>
-                  <div class="form-group">
-                    <label>Email</label>
-                    <input type="email" id="email"/>
-                  </div>
-                  <div class="form-group">
-                    <label>Plan Name</label>
-                    <input type="text" id="plan_name" required/>
-                  </div>
-                  <div class="form-group">
-                    <label>Monthly Fee</label>
-                    <input type="number" id="monthly_fee" required/>
-                  </div>
-                  <div class="form-group">
-                    <label>Installation Date</label>
-                    <input type="date" id="installation_date" required/>
-                  </div>
-                  <div class="form-group">
-                    <label>Due Day</label>
-                    <input type="number" id="due_day" min="1" max="31" readonly placeholder="Auto from installation date"/>
-                  </div>
-                  <div class="form-group">
-                    <label>Status</label>
-                    <select id="status">
-                      <option value="ACTIVE">ACTIVE</option>
-                      <option value="TEMP DISABLED">TEMP DISABLED</option>
-                      <option value="DISCONNECTED">DISCONNECTED</option>
-                    </select>
-                  </div>
-                  <div class="form-group">
-                    <label>Portal Password</label>
-                    <input type="text" id="portal_password"/>
-                  </div>
-                  <div class="form-group">
-                    <label>MAC Address</label>
-                    <input type="text" id="MAC_address"/>
-                  </div>
-                  <div class="form-group">
-                    <label>Assigned IP</label>
-                    <input type="text" id="assigned_ip"/>
-                  </div>
-                  <div class="form-group">
-                    <label>OLT Port</label>
-                    <input type="text" id="olt_port"/>
-                  </div>
-                  <div class="form-group">
-                    <label>ONU Serial</label>
-                    <input type="text" id="onu_serial"/>
-                  </div>
-                </div>
-
-                <div class="form-group">
-                  <label>Remarks</label>
-                  <textarea id="remarks"></textarea>
-                </div>
-
-                <div style="margin-top: 15px;">
-                  <button type="submit" id="saveBtn" class="btn-primary">Save Subscriber</button>
-                  <button type="button" id="cancelEditBtn" class="btn-light" style="display:none;">Cancel</button>
-                </div>
-
-                <div id="formMessage" class="message"></div>
-              </form>
-            </div>
-          </section>
-
-          <section class="content-section" id="section-subscribers">
-            <div class="card">
-              <div class="toolbar">
-                <h2>Subscribers</h2>
-                <input type="text" id="searchInput" placeholder="Search..."/>
-              </div>
-              <div id="pageMessage" class="message"></div>
-              <div class="table-wrap">
-                <table>
-                  <thead>
-                    <tr>
-                      <th>Action</th>
-                      <th>Account No</th>
-                      <th>Full Name</th>
-                      <th>Plan</th>
-                      <th>Monthly Fee</th>
-                      <th>Status</th>
-                      <th>Contact</th>
-                      <th>IP</th>
-                      <th>MAC</th>
-                      <th>OLT</th>
-                      <th>ONU</th>
-                    </tr>
-                  </thead>
-                  <tbody id="subscriberTableBody">
-                    <tr><td colspan="11" class="empty-cell">Loading...</td></tr>
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          </section>
-
-          <section class="content-section" id="section-billing">
-            <div class="card">
-              <div class="toolbar">
-                <h2 style="margin:0;">Billing Management</h2>
-              </div>
-              <div id="billingMessage" class="message"></div>
-              <div class="table-wrap">
-                <table>
-                  <thead>
-                    <tr>
-                      <th>Billing ID</th>
-                      <th>Account No</th>
-                      <th>Name</th>
-                      <th>Plan</th>
-                      <th>Month</th>
-                      <th>Due Date</th>
-                      <th>Amount</th>
-                      <th>Status</th>
-                    </tr>
-                  </thead>
-                  <tbody id="billingTableBody">
-                    <tr><td colspan="8" class="empty-cell">No billing data.</td></tr>
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          </section>
-
-          <section class="content-section" id="section-payments">
-            <div class="card">
-              <div class="toolbar">
-                <h2 style="margin:0;">Payments</h2>
-              </div>
-
-              <form id="paymentForm" style="margin-bottom:15px;">
-                <div class="form-grid">
-                  <div class="form-group">
-                    <label>Account No</label>
-                    <input type="text" id="payment_account_no" required />
-                  </div>
-                  <div class="form-group">
-                    <label>Subscriber Name</label>
-                    <input type="text" id="payment_full_name" required />
-                  </div>
-                  <div class="form-group">
-                    <label>Payment Date</label>
-                    <input type="date" id="payment_date" required />
-                  </div>
-                  <div class="form-group">
-                    <label>Amount</label>
-                    <input type="number" id="payment_amount" step="0.01" required />
-                  </div>
-                  <div class="form-group">
-                    <label>Payment Method</label>
-                    <select id="payment_method" required>
-                      <option value="">Select</option>
-                      <option value="CASH">CASH</option>
-                      <option value="GCASH">GCASH</option>
-                      <option value="BANK TRANSFER">BANK TRANSFER</option>
-                      <option value="ONLINE">ONLINE</option>
-                    </select>
-                  </div>
-                  <div class="form-group">
-                    <label>Reference</label>
-                    <input type="text" id="payment_reference" />
-                  </div>
-                </div>
-
-                <div class="form-group" style="margin-top:14px;">
-                  <label>Remarks</label>
-                  <textarea id="payment_remarks"></textarea>
-                </div>
-
-                <div style="margin-top:14px;">
-                  <button type="submit" class="btn-primary">Save Payment</button>
-                </div>
-
-                <div id="paymentMessage" class="message"></div>
-              </form>
-
-              <div class="table-wrap">
-                <table>
-                  <thead>
-                    <tr>
-                      <th>Payment ID</th>
-                      <th>Billing ID</th>
-                      <th>Account No</th>
-                      <th>Name</th>
-                      <th>Payment Date</th>
-                      <th>Amount</th>
-                      <th>Method</th>
-                      <th>Reference</th>
-                    </tr>
-                  </thead>
-                  <tbody id="paymentsTableBody">
-                    <tr><td colspan="8" class="empty-cell">No payment data.</td></tr>
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          </section>
-
-          <section class="content-section" id="section-ledger">
-            <div class="card" id="ledgerSection">
-              <div class="toolbar">
-                <h2 style="margin:0;">Account Ledger</h2>
-              </div>
-
-              <div class="form-grid" style="margin-bottom:14px;">
-                <div class="form-group">
-                  <label>Account No</label>
-                  <input type="text" id="ledger_account_no" />
-                </div>
-                <div class="form-group">
-                  <label>Subscriber Name</label>
-                  <input type="text" id="ledger_full_name" />
-                </div>
-              </div>
-
-              <div style="margin-bottom:14px;">
-                <button type="button" class="btn-primary" id="loadLedgerBtn">Load Ledger</button>
-              </div>
-
-              <div id="ledgerMessage" class="message"></div>
-
-              <div class="cards" style="margin-top:10px;">
-                <div class="stat-card">
-                  <div class="stat-label">Total Unpaid</div>
-                  <div id="ledgerTotalUnpaid" class="stat-value">₱0.00</div>
-                </div>
-                <div class="stat-card">
-                  <div class="stat-label">Total Paid</div>
-                  <div id="ledgerTotalPaid" class="stat-value">₱0.00</div>
-                </div>
-              </div>
-
-              <div class="card" style="margin-top:14px;">
-                <div class="toolbar">
-                  <h3 style="margin:0;">Billing History</h3>
-                </div>
-                <div class="table-wrap">
-                  <table>
-                    <thead>
-                      <tr>
-                        <th>Billing ID</th>
-                        <th>Month</th>
-                        <th>Due Date</th>
-                        <th>Amount</th>
-                        <th>Status</th>
-                      </tr>
-                    </thead>
-                    <tbody id="ledgerBillsTableBody">
-                      <tr><td colspan="5" class="empty-cell">No billing history.</td></tr>
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-
-              <div class="card" style="margin-top:14px;">
-                <div class="toolbar">
-                  <h3 style="margin:0;">Payment History</h3>
-                </div>
-                <div class="table-wrap">
-                  <table>
-                    <thead>
-                      <tr>
-                        <th>Payment ID</th>
-                        <th>Billing ID</th>
-                        <th>Payment Date</th>
-                        <th>Amount</th>
-                        <th>Method</th>
-                        <th>Reference</th>
-                      </tr>
-                    </thead>
-                    <tbody id="ledgerPaymentsTableBody">
-                      <tr><td colspan="6" class="empty-cell">No payment history.</td></tr>
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            </div>
-          </section>
-        </div>
-      </main>
-    </div>
-  </div>
-
-  <script src="assets/config.js"></script>
-  <script src="js/common.js"></script>
-  <script src="js/staff.js"></script>
+<section class="content-section" id="section-expenses">
+<div class="card">
+<div class="toolbar">
+<h2 style="margin:0;">Expenses</h2>
+<button class="btn-light" id="refreshExpensesBtn" type="button">Refresh</button>
+</div>
+<form id="expenseForm">
+<div class="form-grid">
+<div class="form-group">
+<label>Expense Date</label>
+<input id="expense_date" required="" type="date"/>
+</div>
+<div class="form-group">
+<label>Category</label>
+<input id="expense_category" placeholder="e.g. Fuel, Salary, Supplies" required="" type="text"/>
+</div>
+<div class="form-group">
+<label>Description</label>
+<input id="expense_description" placeholder="Expense description" type="text"/>
+</div>
+<div class="form-group">
+<label>Amount</label>
+<input id="expense_amount" min="0" required="" step="0.01" type="number"/>
+</div>
+<div class="form-group">
+<label>Entered By</label>
+<input id="expense_entered_by" placeholder="Admin / Staff name" type="text"/>
+</div>
+</div>
+<div class="form-group" style="margin-top:14px;">
+<label>Notes</label>
+<textarea id="expense_notes" placeholder="Optional notes"></textarea>
+</div>
+<div style="margin-top:14px; display:flex; gap:10px; flex-wrap:wrap;">
+<button class="btn-primary" type="submit">Save Expense</button>
+</div>
+<div class="message" id="expenseMessage"></div>
+</form>
+</div>
+<div class="card">
+<div class="toolbar">
+<h2 style="margin:0;">Expenses List</h2>
+</div>
+<div class="table-wrap">
+<table>
+<thead>
+<tr>
+<th>Expense ID</th>
+<th>Date</th>
+<th>Category</th>
+<th>Description</th>
+<th>Amount</th>
+<th>Entered By</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody id="expensesTableBody">
+<tr>
+<td class="empty-cell" colspan="7">Loading...</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</section>
+<section class="content-section" id="section-income-statement">
+<div class="card">
+<div class="toolbar">
+<h2 style="margin:0;">Income Statement</h2>
+<div style="display:flex; gap:10px; flex-wrap:wrap; align-items:center;">
+<input id="income_month" type="month"/>
+<button class="btn-secondary" id="loadIncomeStatementBtn" type="button">Load Statement</button>
+</div>
+</div>
+<div class="cards cards-3">
+<div class="stat-card">
+<div class="stat-label">Revenue</div>
+<div class="stat-value" id="incomeRevenue">₱0.00</div>
+</div>
+<div class="stat-card">
+<div class="stat-label">Expenses</div>
+<div class="stat-value" id="incomeExpenses">₱0.00</div>
+</div>
+<div class="stat-card">
+<div class="stat-label">Net Income</div>
+<div class="stat-value" id="incomeNetIncome">₱0.00</div>
+</div>
+</div>
+<div class="message" id="incomeStatementMessage"></div>
+</div>
+</section>
+<section class="content-section" id="section-ledger">
+<div class="card" id="ledgerSection">
+<div class="toolbar">
+<h2 style="margin:0;">Account Ledger</h2>
+</div>
+<div class="form-grid" style="margin-bottom:14px;">
+<div class="form-group">
+<label>Account No</label>
+<input id="ledger_account_no" type="text"/>
+</div>
+<div class="form-group">
+<label>Subscriber Name</label>
+<input id="ledger_full_name" type="text"/>
+</div>
+</div>
+<div style="margin-bottom:14px;">
+<button class="btn-primary" id="loadLedgerBtn" type="button">Load Ledger</button>
+</div>
+<div class="message" id="ledgerMessage"></div>
+<div class="cards" style="margin-top:10px;">
+<div class="stat-card">
+<div class="stat-label">Total Unpaid</div>
+<div class="stat-value" id="ledgerTotalUnpaid">₱0.00</div>
+</div>
+<div class="stat-card">
+<div class="stat-label">Total Paid</div>
+<div class="stat-value" id="ledgerTotalPaid">₱0.00</div>
+</div>
+</div>
+<div class="card" style="margin-top:14px;">
+<div class="toolbar">
+<h3 style="margin:0;">Billing History</h3>
+</div>
+<div class="table-wrap">
+<table>
+<thead>
+<tr>
+<th>Billing ID</th>
+<th>Month</th>
+<th>Due Date</th>
+<th>Amount</th>
+<th>Status</th>
+</tr>
+</thead>
+<tbody id="ledgerBillsTableBody">
+<tr><td class="empty-cell" colspan="5">No billing history.</td></tr>
+</tbody>
+</table>
+</div>
+</div>
+<div class="card" style="margin-top:14px;">
+<div class="toolbar">
+<h3 style="margin:0;">Payment History</h3>
+</div>
+<div class="table-wrap">
+<table>
+<thead>
+<tr>
+<th>Payment ID</th>
+<th>Billing ID</th>
+<th>Payment Date</th>
+<th>Amount</th>
+<th>Method</th>
+<th>Reference</th>
+</tr>
+</thead>
+<tbody id="ledgerPaymentsTableBody">
+<tr><td class="empty-cell" colspan="6">No payment history.</td></tr>
+</tbody>
+</table>
+</div>
+</div>
+</div>
+</section>
+</div>
+</main>
+</div>
+</div>
+<script src="assets/config.js"></script>
+<script src="js/common.js"></script>
+<script src="js/staff.js"></script>
 </body>
 </html>
