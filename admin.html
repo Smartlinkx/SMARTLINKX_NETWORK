@@ -584,6 +584,47 @@
 </tbody>
 </table>
 </div>
+<div class="core-user-detail card subtle-card" id="coreUserDetailCard" style="display:none;">
+<div class="card-header-row core-user-detail-header">
+<div>
+<h3 class="section-title" id="coreUserDetailTitle">Subscriber Details</h3>
+<p class="muted" id="coreUserDetailSubtitle">Select an account number to view details.</p>
+</div>
+<button class="btn-light" id="coreUserDetailCloseBtn" type="button">Close</button>
+</div>
+<div class="detail-tabs">
+<button class="detail-tab active" data-user-tab="information" type="button">Information</button>
+<button class="detail-tab" data-user-tab="billing" type="button">Billing</button>
+<button class="detail-tab" data-user-tab="services" type="button">Services</button>
+</div>
+<div class="detail-tab-panel active" id="coreUserTab-information">
+<div class="detail-grid" id="coreUserInfoGrid"></div>
+</div>
+<div class="detail-tab-panel" id="coreUserTab-billing">
+<div class="detail-summary-grid" id="coreUserBillingSummary"></div>
+<div class="table-wrap">
+<table>
+<thead>
+<tr>
+<th>Billing ID</th>
+<th>Month</th>
+<th>Due Date</th>
+<th>Amount</th>
+<th>Applied</th>
+<th>Balance</th>
+<th>Status</th>
+</tr>
+</thead>
+<tbody id="coreUserBillingTableBody">
+<tr><td class="empty-cell" colspan="7">No billing records found.</td></tr>
+</tbody>
+</table>
+</div>
+</div>
+<div class="detail-tab-panel" id="coreUserTab-services">
+<div class="detail-grid" id="coreUserServicesGrid"></div>
+</div>
+</div>
 </div>
 </section>
 <section class="content-section" id="section-core-olt">
