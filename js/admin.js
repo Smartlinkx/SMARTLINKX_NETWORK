@@ -205,6 +205,7 @@ async function loadSubscribers() {
 
     subscribersCache = Array.isArray(result.data) ? result.data : [];
     renderSubscribers(getValue("searchInput"));
+    renderCoreUsers();
     updateSummaryCards();
     showMessage("pageMessage", "Subscribers loaded successfully.", false);
   } catch (err) {
