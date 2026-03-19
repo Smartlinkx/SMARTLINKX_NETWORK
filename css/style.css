@@ -242,3 +242,286 @@ th {
     align-items: flex-start;
   }
 }
+
+
+/* ===== APP LAYOUT / SIDEBAR ===== */
+body {
+  background: #f3f4f6;
+}
+
+.app-shell {
+  min-height: 100vh;
+  display: flex;
+  background: #f3f4f6;
+}
+
+.sidebar {
+  width: 280px;
+  background: #ffffff;
+  border-right: 1px solid #e5e7eb;
+  display: flex;
+  flex-direction: column;
+  transition: width 0.28s ease, transform 0.28s ease;
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  z-index: 50;
+}
+
+.sidebar.collapsed {
+  width: 84px;
+}
+
+.sidebar-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 18px 16px;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.sidebar-brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.sidebar-brand-mark {
+  width: 42px;
+  height: 42px;
+  border-radius: 14px;
+  background: #111827;
+  color: #fff;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  flex: 0 0 auto;
+}
+
+.sidebar-brand-text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.sidebar-brand-text strong {
+  font-size: 14px;
+  letter-spacing: 0.04em;
+}
+
+.sidebar-brand-text span {
+  font-size: 12px;
+  color: #6b7280;
+}
+
+.sidebar.collapsed .sidebar-brand-text,
+.sidebar.collapsed .nav-label,
+.sidebar.collapsed .nav-caret,
+.sidebar.collapsed .nav-submenu {
+  display: none;
+}
+
+.sidebar-toggle,
+.mobile-menu-btn {
+  border: 1px solid #d1d5db;
+  background: #fff;
+  color: #111827;
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  padding: 0;
+}
+
+.sidebar-nav {
+  padding: 16px 12px 24px;
+  overflow-y: auto;
+}
+
+.nav-group + .nav-group {
+  margin-top: 8px;
+}
+
+.nav-parent {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  background: transparent;
+  color: #111827;
+  border-radius: 14px;
+  padding: 12px 14px;
+}
+
+.nav-parent:hover,
+.nav-link:hover {
+  background: #f3f4f6;
+}
+
+.nav-parent-main {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.nav-icon {
+  width: 20px;
+  height: 20px;
+  display: inline-flex;
+  color: #4b5563;
+  flex: 0 0 auto;
+}
+
+.nav-icon svg {
+  width: 20px;
+  height: 20px;
+}
+
+.nav-caret {
+  color: #6b7280;
+  transition: transform 0.2s ease;
+}
+
+.nav-parent[aria-expanded="false"] .nav-caret {
+  transform: rotate(-90deg);
+}
+
+.nav-submenu {
+  max-height: 280px;
+  overflow: hidden;
+  transition: max-height 0.28s ease, opacity 0.2s ease, margin 0.2s ease;
+  opacity: 1;
+  margin-top: 4px;
+}
+
+.nav-submenu:not(.open) {
+  max-height: 0;
+  opacity: 0;
+  margin-top: 0;
+}
+
+.nav-link {
+  width: 100%;
+  text-align: left;
+  background: transparent;
+  color: #4b5563;
+  border-radius: 12px;
+  padding: 10px 14px 10px 46px;
+  font-weight: 600;
+}
+
+.nav-link.active {
+  background: #e5e7eb;
+  color: #111827;
+}
+
+.main-shell {
+  min-width: 0;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.app-topbar {
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  box-shadow: 0 1px 0 rgba(17, 24, 39, 0.06);
+}
+
+.topbar-left {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.topbar-subtitle {
+  color: #d1d5db;
+}
+
+.mobile-menu-btn,
+.mobile-overlay {
+  display: none;
+}
+
+.content-shell {
+  padding: 20px 0 30px;
+}
+
+.section-summary {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.content-section {
+  display: none;
+}
+
+.content-section.active {
+  display: block;
+}
+
+@media (max-width: 1200px) {
+  .section-summary {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 900px) {
+  .sidebar {
+    position: fixed;
+    left: 0;
+    top: 0;
+    transform: translateX(-100%);
+    width: 280px;
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.18);
+  }
+
+  .sidebar.collapsed {
+    width: 280px;
+  }
+
+  .sidebar.mobile-open {
+    transform: translateX(0);
+  }
+
+  .sidebar-toggle-desktop {
+    display: none;
+  }
+
+  .mobile-menu-btn,
+  .mobile-overlay {
+    display: block;
+  }
+
+  .mobile-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(17, 24, 39, 0.45);
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.25s ease, visibility 0.25s ease;
+    z-index: 40;
+  }
+
+  .mobile-overlay.show {
+    opacity: 1;
+    visibility: visible;
+  }
+
+  .content-shell {
+    padding-top: 16px;
+  }
+
+  .topbar .container {
+    flex-direction: row;
+    align-items: center;
+  }
+
+  .section-summary {
+    grid-template-columns: 1fr;
+  }
+}
