@@ -22,6 +22,22 @@
 
       <nav class="sidebar-nav">
         <div class="nav-group">
+          <button type="button" class="nav-link nav-link-main active" data-section="dashboard">
+            <span class="nav-parent-main">
+              <span class="nav-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                  <path d="M3 13h8V3H3z"></path>
+                  <path d="M13 21h8V11h-8z"></path>
+                  <path d="M13 3h8v4h-8z"></path>
+                  <path d="M3 17h8v4H3z"></path>
+                </svg>
+              </span>
+              <span class="nav-label">Dashboard</span>
+            </span>
+          </button>
+        </div>
+
+        <div class="nav-group">
           <button type="button" class="nav-parent" data-dropdown="accounts" aria-expanded="true">
             <span class="nav-parent-main">
               <span class="nav-icon">
@@ -87,7 +103,8 @@
 
       <main class="content-shell">
         <div class="container">
-          <div class="cards section-summary">
+          <section class="content-section active" id="section-dashboard">
+            <div class="cards section-summary">
             <div class="stat-card">
               <div class="stat-label">Overdue</div>
               <div id="cardOverdue" class="stat-value">0</div>
@@ -101,8 +118,9 @@
               <div id="cardDueSoon" class="stat-value">0</div>
             </div>
           </div>
+          </section>
 
-          <section class="content-section active" id="section-new-user">
+          <section class="content-section" id="section-new-user">
             <div class="card">
               <h2 id="formTitle">Add New Subscriber</h2>
               <form id="addSubscriberForm">
