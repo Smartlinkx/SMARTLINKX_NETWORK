@@ -11,6 +11,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   }
 
   bindStaffEvents();
+  bindSidebarNavigation();
   await loadSubscribers();
   await loadBilling();
   await loadBillingSummary();
@@ -189,6 +190,7 @@ function startEdit(subscriberId) {
   document.getElementById("onu_serial").value = item.onu_serial || "";
   document.getElementById("remarks").value = item.remarks || "";
 
+  if (typeof navigateToSection === "function") navigateToSection("new-user");
   showMessage("formMessage", "Editing subscriber: " + (item.full_name || item.account_no), false);
   window.scrollTo({ top: 0, behavior: "smooth" });
 }
@@ -495,4 +497,83 @@ function normalizeInputDate(value) {
 
 function escapeJs(value) {
   return String(value ?? "").replace(/\\/g, "\\\\").replace(/'/g, "\\'");
+}
+
+
+function bindSidebarNavigation() {
+  const body = document.body;
+  const sidebar = document.getElementById("sidebar");
+  const overlay = document.getElementById("mobileOverlay");
+  const mobileBtn = document.getElementById("mobileMenuBtn");
+  const collapseBtn = document.getElementById("sidebarCollapseBtn");
+  const navLinks = Array.from(document.querySelectorAll(".nav-link[data-section]"));
+  const parents = Array.from(document.querySelectorAll(".nav-parent[data-dropdown]"));
+
+  parents.forEach((btn) => {
+    btn.addEventListener("click", () => {
+      if (window.innerWidth <= 900 && sidebar?.classList.contains("collapsed")) {
+        sidebar.classList.remove("collapsed");
+        body.classList.remove("sidebar-collapsed");
+      }
+      const name = btn.dataset.dropdown;
+      const submenu = document.querySelector(`.nav-submenu[data-submenu="${name}"]`);
+      if (!submenu) return;
+      const willOpen = !submenu.classList.contains("open");
+      submenu.classList.toggle("open", willOpen);
+      btn.setAttribute("aria-expanded", willOpen ? "true" : "false");
+    });
+  });
+
+  navLinks.forEach((btn) => {
+    btn.addEventListener("click", () => {
+      navigateToSection(btn.dataset.section);
+      if (window.innerWidth <= 900) closeMobileSidebar();
+    });
+  });
+
+  if (mobileBtn) mobileBtn.addEventListener("click", openMobileSidebar);
+  if (overlay) overlay.addEventListener("click", closeMobileSidebar);
+  if (collapseBtn) {
+    collapseBtn.addEventListener("click", () => {
+      if (window.innerWidth <= 900) {
+        openMobileSidebar();
+        return;
+      }
+      const collapsed = sidebar?.classList.toggle("collapsed");
+      body.classList.toggle("sidebar-collapsed", !!collapsed);
+    });
+  }
+
+  window.addEventListener("resize", () => {
+    if (window.innerWidth > 900) closeMobileSidebar();
+  });
+
+  const initial = (window.location.hash || "").replace("#", "") || "new-user";
+  navigateToSection(initial);
+}
+
+function navigateToSection(sectionName) {
+  const sections = Array.from(document.querySelectorAll(".content-section"));
+  const navLinks = Array.from(document.querySelectorAll(".nav-link[data-section]"));
+  sections.forEach((section) => {
+    section.classList.toggle("active", section.id === `section-${sectionName}`);
+  });
+  navLinks.forEach((btn) => {
+    btn.classList.toggle("active", btn.dataset.section === sectionName);
+  });
+  window.location.hash = sectionName;
+}
+
+function openMobileSidebar() {
+  const sidebar = document.getElementById("sidebar");
+  const overlay = document.getElementById("mobileOverlay");
+  sidebar?.classList.add("mobile-open");
+  overlay?.classList.add("show");
+}
+
+function closeMobileSidebar() {
+  const sidebar = document.getElementById("sidebar");
+  const overlay = document.getElementById("mobileOverlay");
+  sidebar?.classList.remove("mobile-open");
+  overlay?.classList.remove("show");
 }
