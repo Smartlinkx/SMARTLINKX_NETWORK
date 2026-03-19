@@ -414,8 +414,23 @@ body {
   font-weight: 600;
 }
 
+.nav-link-main {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+}
+
+.nav-link-main .nav-parent-main {
+  width: 100%;
+}
+
 .nav-link.active {
   background: #e5e7eb;
+  color: #111827;
+}
+
+.nav-link.active .nav-icon {
   color: #111827;
 }
 
