@@ -895,6 +895,30 @@ function upper(value) {
 }
 
 
+function renderCoreUsers() {
+  const tbody = document.getElementById("coreUserTableBody");
+  if (!tbody) return;
+
+  const rows = Array.isArray(subscribersCache) ? subscribersCache : [];
+  if (!rows.length) {
+    tbody.innerHTML = '<tr><td class="empty-cell" colspan="8">No user records found.</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = rows.map((row) => `
+    <tr>
+      <td>${escapeHtml(row.account_no || "-")}</td>
+      <td>${escapeHtml(row.full_name || "-")}</td>
+      <td>${escapeHtml(row.plan_name || "-")}</td>
+      <td>${escapeHtml(row.MAC_address || "-")}</td>
+      <td>${escapeHtml(row.assigned_ip || "-")}</td>
+      <td>${escapeHtml(row.olt_port || "-")}</td>
+      <td>${escapeHtml(row.onu_serial || "-")}</td>
+      <td>${escapeHtml(row.status || "-")}</td>
+    </tr>
+  `).join("");
+}
+
 function bindSidebarNavigation() {
   const body = document.body;
   const sidebar = document.getElementById("sidebar");
