@@ -1,5 +1,7 @@
 let subscribersCache = [];
 let isEditMode = false;
+let isLoadingExpenses = false;
+let isSavingExpense = false;
 
 document.addEventListener("DOMContentLoaded", async () => {
   const user = requireRole("STAFF");
@@ -16,6 +18,8 @@ document.addEventListener("DOMContentLoaded", async () => {
   await loadBilling();
   await loadBillingSummary();
   await loadPayments();
+  await loadExpenses();
+  await loadIncomeStatement();
 });
 
 function bindStaffEvents() {
@@ -49,6 +53,15 @@ function bindStaffEvents() {
     });
   }
 
+  const expenseForm = document.getElementById("expenseForm");
+  if (expenseForm) {
+    expenseForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      if (isSavingExpense) return;
+      await addExpense();
+    });
+  }
+
   const cancelEditBtn = document.getElementById("cancelEditBtn");
   if (cancelEditBtn) {
     cancelEditBtn.addEventListener("click", resetFormMode);
@@ -59,6 +72,30 @@ function bindStaffEvents() {
     loadLedgerBtn.addEventListener("click", async () => {
       await loadLedger();
     });
+  }
+
+  const refreshExpensesBtn = document.getElementById("refreshExpensesBtn");
+  if (refreshExpensesBtn) {
+    refreshExpensesBtn.addEventListener("click", async () => {
+      await loadExpenses();
+    });
+  }
+
+  const loadIncomeStatementBtn = document.getElementById("loadIncomeStatementBtn");
+  if (loadIncomeStatementBtn) {
+    loadIncomeStatementBtn.addEventListener("click", async () => {
+      await loadIncomeStatement();
+    });
+  }
+
+  const incomeMonth = document.getElementById("income_month");
+  if (incomeMonth && !incomeMonth.value) {
+    incomeMonth.value = new Date().toISOString().slice(0, 7);
+  }
+
+  const expenseDate = document.getElementById("expense_date");
+  if (expenseDate && !expenseDate.value) {
+    expenseDate.value = new Date().toISOString().slice(0, 10);
   }
 
   bindInstallationDateAutoDueDay();
@@ -412,6 +449,123 @@ function renderPayments(data) {
     </tr>
   `).join("");
 }
+
+
+async function addExpense() {
+  if (isSavingExpense) return;
+  isSavingExpense = true;
+
+  const payload = {
+    action: "addExpense",
+    expense_date: getValue("expense_date"),
+    category: getValue("expense_category"),
+    description: getValue("expense_description"),
+    amount: getValue("expense_amount"),
+    entered_by: getValue("expense_entered_by"),
+    notes: getValue("expense_notes")
+  };
+
+  try {
+    showMessage("expenseMessage", "Saving expense...", false);
+
+    const result = await apiPost(payload);
+
+    if (!result || !result.success) {
+      showMessage("expenseMessage", result?.message || "Failed to save expense.", true);
+      return;
+    }
+
+    const form = document.getElementById("expenseForm");
+    if (form) form.reset();
+    setValue("expense_date", new Date().toISOString().slice(0, 10));
+    showMessage("expenseMessage", "Expense saved successfully.", false);
+
+    await Promise.allSettled([
+      loadExpenses(),
+      loadIncomeStatement(),
+      loadDashboardSummary()
+    ]);
+  } catch (err) {
+    console.error("addExpense error:", err);
+    showMessage("expenseMessage", "Unable to save expense.", true);
+  } finally {
+    isSavingExpense = false;
+  }
+}
+
+async function loadExpenses() {
+  if (isLoadingExpenses) return;
+  isLoadingExpenses = true;
+
+  try {
+    const result = await apiGet({ action: "getExpenses" });
+
+    if (!result || !result.success) {
+      showMessage("expenseMessage", result?.message || "Failed to load expenses.", true);
+      renderExpenses([]);
+      return;
+    }
+
+    renderExpenses(Array.isArray(result.data) ? result.data : []);
+  } catch (err) {
+    console.error("loadExpenses error:", err);
+    showMessage("expenseMessage", "Failed to load expenses.", true);
+    renderExpenses([]);
+  } finally {
+    isLoadingExpenses = false;
+  }
+}
+
+function renderExpenses(data) {
+  const tbody = document.getElementById("expensesTableBody");
+  if (!tbody) return;
+
+  if (!data.length) {
+    tbody.innerHTML = `<tr><td colspan="7" class="empty-cell">No expense data.</td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = data.map(item => `
+    <tr>
+      <td>${escapeHtml(item.expense_id)}</td>
+      <td>${escapeHtml(item.expense_date)}</td>
+      <td>${escapeHtml(item.category)}</td>
+      <td>${escapeHtml(item.description)}</td>
+      <td>${formatMoney(item.amount)}</td>
+      <td>${escapeHtml(item.entered_by)}</td>
+      <td>${escapeHtml(item.notes)}</td>
+    </tr>
+  `).join("");
+}
+
+async function loadIncomeStatement() {
+  const month = getValue("income_month") || new Date().toISOString().slice(0, 7);
+  setValue("income_month", month);
+
+  try {
+    showMessage("incomeStatementMessage", "Loading income statement...", false);
+
+    const result = await apiGet({ action: "getIncomeStatement", month });
+
+    if (!result || !result.success) {
+      showMessage("incomeStatementMessage", result?.message || "Failed to load income statement.", true);
+      setText("incomeRevenue", formatMoney(0));
+      setText("incomeExpenses", formatMoney(0));
+      setText("incomeNetIncome", formatMoney(0));
+      return;
+    }
+
+    const data = result.data || {};
+    setText("incomeRevenue", formatMoney(data.revenue || 0));
+    setText("incomeExpenses", formatMoney(data.expenses || 0));
+    setText("incomeNetIncome", formatMoney(data.net_income || 0));
+    showMessage("incomeStatementMessage", `Income statement loaded for ${escapeHtml(month)}.`, false);
+  } catch (err) {
+    console.error("loadIncomeStatement error:", err);
+    showMessage("incomeStatementMessage", "Failed to load income statement.", true);
+  }
+}
+
 
 async function loadLedger() {
   const accountNo = document.getElementById("ledger_account_no").value.trim();
