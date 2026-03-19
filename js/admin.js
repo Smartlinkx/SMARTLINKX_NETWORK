@@ -11,6 +11,8 @@ let isSavingPayment = false;
 let isLoadingDashboard = false;
 let isLoadingExpenses = false;
 let isSavingExpense = false;
+let selectedCoreUserAccountNo = "";
+const coreUserLedgerCache = {};
 
 document.addEventListener("DOMContentLoaded", initAdminPage);
 
@@ -129,7 +131,9 @@ function bindAdminEvents() {
   }
 
   bindInstallationDateAutoDueDay();
+  bindCoreUserDetailEvents();
 }
+
 
 function bindInstallationDateAutoDueDay() {
   const installationDateEl = document.getElementById("installation_date");
@@ -903,12 +907,13 @@ function renderCoreUsers() {
   const rows = Array.isArray(subscribersCache) ? subscribersCache : [];
   if (!rows.length) {
     tbody.innerHTML = '<tr><td class="empty-cell" colspan="8">No user records found.</td></tr>';
+    closeCoreUserDetail();
     return;
   }
 
   tbody.innerHTML = rows.map((row) => `
     <tr>
-      <td>${escapeHtml(row.account_no || "-")}</td>
+      <td><a href="#" class="core-account-link" onclick="return openCoreUserDetails('${escapeJs(row.account_no || "")}', '${escapeJs(row.full_name || "")}')">${escapeHtml(row.account_no || "-")}</a></td>
       <td>${escapeHtml(row.full_name || "-")}</td>
       <td>${escapeHtml(row.plan_name || "-")}</td>
       <td>${escapeHtml(row.MAC_address || "-")}</td>
@@ -918,6 +923,153 @@ function renderCoreUsers() {
       <td>${escapeHtml(row.status || "-")}</td>
     </tr>
   `).join("");
+
+  if (selectedCoreUserAccountNo) {
+    const current = rows.find((row) => String(row.account_no || "") === String(selectedCoreUserAccountNo));
+    if (current) {
+      populateCoreUserInfo(current);
+      populateCoreUserServices(current);
+    }
+  }
+}
+
+function bindCoreUserDetailEvents() {
+  const closeBtn = document.getElementById("coreUserDetailCloseBtn");
+  if (closeBtn) {
+    closeBtn.addEventListener("click", closeCoreUserDetail);
+  }
+
+  document.querySelectorAll(".detail-tab[data-user-tab]").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      activateCoreUserTab(btn.dataset.userTab || "information");
+    });
+  });
+}
+
+function activateCoreUserTab(tabName) {
+  document.querySelectorAll(".detail-tab[data-user-tab]").forEach((btn) => {
+    btn.classList.toggle("active", btn.dataset.userTab === tabName);
+  });
+  document.querySelectorAll(".detail-tab-panel").forEach((panel) => {
+    panel.classList.toggle("active", panel.id === `coreUserTab-${tabName}`);
+  });
+}
+
+function closeCoreUserDetail() {
+  const card = document.getElementById("coreUserDetailCard");
+  if (card) card.style.display = "none";
+  selectedCoreUserAccountNo = "";
+  activateCoreUserTab("information");
+}
+
+function renderDetailGrid(containerId, fields) {
+  const container = document.getElementById(containerId);
+  if (!container) return;
+  container.innerHTML = fields.map((field) => `
+    <div class="detail-item">
+      <div class="detail-item-label">${escapeHtml(field.label)}</div>
+      <div class="detail-item-value">${escapeHtml(field.value || "-")}</div>
+    </div>
+  `).join("");
+}
+
+function populateCoreUserInfo(user) {
+  renderDetailGrid("coreUserInfoGrid", [
+    { label: "Subscriber ID", value: user.subscriber_id || "-" },
+    { label: "Account No.", value: user.account_no || "-" },
+    { label: "Full Name", value: user.full_name || "-" },
+    { label: "Plan", value: user.plan_name || "-" },
+    { label: "Monthly Fee", value: formatMoney(user.monthly_fee || 0) },
+    { label: "Installation Date", value: user.installation_date || "-" },
+    { label: "Contact Number", value: user.contact_number || "-" },
+    { label: "Address", value: user.address || "-" },
+    { label: "Email", value: user.email || "-" },
+    { label: "Portal Password", value: user.portal_password || "-" },
+    { label: "Status", value: user.status || "-" },
+    { label: "Advance Credit", value: formatMoney(user.advance_credit || 0) }
+  ]);
+}
+
+function populateCoreUserServices(user) {
+  renderDetailGrid("coreUserServicesGrid", [
+    { label: "MAC Address", value: user.MAC_address || "-" },
+    { label: "Assigned IP", value: user.assigned_ip || "-" },
+    { label: "OLT Port", value: user.olt_port || "-" },
+    { label: "ONU Serial", value: user.onu_serial || "-" },
+    { label: "Service Status", value: user.status || "-" },
+    { label: "Remarks", value: user.remarks || "-" }
+  ]);
+}
+
+function populateCoreUserBilling(ledger) {
+  const summary = document.getElementById("coreUserBillingSummary");
+  const tbody = document.getElementById("coreUserBillingTableBody");
+  if (summary) {
+    summary.innerHTML = `
+      <div class="detail-item"><div class="detail-item-label">Total Unpaid</div><div class="detail-item-value">${formatMoney(ledger.total_unpaid || 0)}</div></div>
+      <div class="detail-item"><div class="detail-item-label">Total Paid</div><div class="detail-item-value">${formatMoney(ledger.total_paid || 0)}</div></div>
+      <div class="detail-item"><div class="detail-item-label">Advance Credit</div><div class="detail-item-value">${formatMoney(ledger.advance_credit || 0)}</div></div>
+      <div class="detail-item"><div class="detail-item-label">Bill Count</div><div class="detail-item-value">${(ledger.bills || []).length}</div></div>
+    `;
+  }
+  if (!tbody) return;
+  const bills = Array.isArray(ledger.bills) ? ledger.bills : [];
+  if (!bills.length) {
+    tbody.innerHTML = '<tr><td class="empty-cell" colspan="7">No billing records found.</td></tr>';
+    return;
+  }
+  tbody.innerHTML = bills.map((item) => `
+    <tr>
+      <td>${escapeHtml(item.billing_id || "-")}</td>
+      <td>${escapeHtml(item.billing_month || "-")}</td>
+      <td>${escapeHtml(item.due_date || "-")}</td>
+      <td>${formatMoney(item.amount || 0)}</td>
+      <td>${formatMoney(item.applied_payment || 0)}</td>
+      <td>${formatMoney(item.balance || 0)}</td>
+      <td>${escapeHtml(item.status || "-")}</td>
+    </tr>
+  `).join("");
+}
+
+async function openCoreUserDetails(accountNo, fullName) {
+  const user = (Array.isArray(subscribersCache) ? subscribersCache : []).find((row) => String(row.account_no || "") === String(accountNo || ""));
+  if (!user) return false;
+
+  selectedCoreUserAccountNo = user.account_no || "";
+  const card = document.getElementById("coreUserDetailCard");
+  const title = document.getElementById("coreUserDetailTitle");
+  const subtitle = document.getElementById("coreUserDetailSubtitle");
+  if (title) title.textContent = `${user.full_name || "Subscriber"} (${user.account_no || ""})`;
+  if (subtitle) subtitle.textContent = `Plan: ${user.plan_name || "-"} • Status: ${user.status || "-"}`;
+  if (card) card.style.display = "block";
+
+  populateCoreUserInfo(user);
+  populateCoreUserServices(user);
+  activateCoreUserTab("information");
+
+  const ledgerKey = `${user.account_no || ""}||${user.full_name || ""}`;
+  if (coreUserLedgerCache[ledgerKey]) {
+    populateCoreUserBilling(coreUserLedgerCache[ledgerKey]);
+  } else {
+    const tbody = document.getElementById("coreUserBillingTableBody");
+    if (tbody) tbody.innerHTML = '<tr><td class="empty-cell" colspan="7">Loading billing records...</td></tr>';
+    try {
+      const result = await apiGet({ action: "getSubscriberLedger", account_no: user.account_no || "", full_name: user.full_name || "" });
+      if (result && result.success && result.data) {
+        coreUserLedgerCache[ledgerKey] = result.data;
+        populateCoreUserBilling(result.data);
+      } else {
+        populateCoreUserBilling({ total_unpaid: 0, total_paid: 0, advance_credit: 0, bills: [] });
+      }
+    } catch (err) {
+      console.error("openCoreUserDetails error:", err);
+      populateCoreUserBilling({ total_unpaid: 0, total_paid: 0, advance_credit: 0, bills: [] });
+    }
+  }
+
+  const section = document.getElementById("section-core-user");
+  if (section) section.scrollIntoView({ behavior: "smooth", block: "start" });
+  return false;
 }
 
 function bindSidebarNavigation() {
