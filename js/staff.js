@@ -548,20 +548,24 @@ function bindSidebarNavigation() {
     if (window.innerWidth > 900) closeMobileSidebar();
   });
 
-  const initial = (window.location.hash || "").replace("#", "") || "new-user";
+  const initial = (window.location.hash || "").replace("#", "") || "dashboard";
   navigateToSection(initial);
 }
 
 function navigateToSection(sectionName) {
   const sections = Array.from(document.querySelectorAll(".content-section"));
   const navLinks = Array.from(document.querySelectorAll(".nav-link[data-section]"));
+  const targetId = `section-${sectionName}`;
+  const hasTarget = sections.some((section) => section.id === targetId);
+  const finalSection = hasTarget ? sectionName : "dashboard";
+
   sections.forEach((section) => {
-    section.classList.toggle("active", section.id === `section-${sectionName}`);
+    section.classList.toggle("active", section.id === `section-${finalSection}`);
   });
   navLinks.forEach((btn) => {
-    btn.classList.toggle("active", btn.dataset.section === sectionName);
+    btn.classList.toggle("active", btn.dataset.section === finalSection);
   });
-  window.location.hash = sectionName;
+  window.location.hash = finalSection;
 }
 
 function openMobileSidebar() {
