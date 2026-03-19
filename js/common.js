@@ -87,7 +87,8 @@ async function apiGet(params = {}) {
 
   const response = await fetch(url, {
     method: "GET",
-    redirect: "follow"
+    redirect: "follow",
+    cache: "no-store"
   });
 
   const text = await response.text();
@@ -107,6 +108,7 @@ async function apiPost(payload = {}) {
   const response = await fetch(getApiBaseUrl(), {
     method: "POST",
     redirect: "follow",
+    cache: "no-store",
     headers: {
       "Content-Type": "text/plain;charset=utf-8"
     },

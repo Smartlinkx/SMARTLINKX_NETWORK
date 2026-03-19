@@ -154,6 +154,22 @@ async function loadSubscribers() {
   }
 }
 
+function upsertSubscriberCache(subscriber) {
+  if (!subscriber || !subscriber.subscriber_id) return;
+
+  const index = subscribersCache.findIndex(
+    item => String(item.subscriber_id || "") === String(subscriber.subscriber_id || "")
+  );
+
+  if (index >= 0) {
+    subscribersCache[index] = { ...subscribersCache[index], ...subscriber };
+  } else {
+    subscribersCache.unshift(subscriber);
+  }
+
+  renderSubscribers(document.getElementById("searchInput")?.value?.trim() || "");
+}
+
 function renderSubscribers(keyword = "") {
   const tbody = document.getElementById("subscriberTableBody");
   if (!tbody) return;
@@ -261,6 +277,7 @@ async function addSubscriber() {
     }
 
     const newAccountNo = result?.data?.account_no || "";
+    upsertSubscriberCache(result?.data || null);
 
     resetFormMode();
     showMessage(
@@ -288,6 +305,7 @@ async function updateSubscriber() {
       return;
     }
 
+    upsertSubscriberCache(result?.data || null);
     resetFormMode();
     showMessage("formMessage", "Subscriber updated successfully.", false);
     await loadSubscribers();
