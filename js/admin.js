@@ -1,4 +1,5 @@
 let subscribersCache = [];
+let paymentsCache = [];
 let isEditMode = false;
 let isBooting = false;
 let isLoadingSubscribers = false;
@@ -232,6 +233,29 @@ function updateSummaryCards() {
   setText("cardDisconnected", disconnected);
 }
 
+function buildSubscriberFromPayload(payload = {}, responseData = {}) {
+  const subscriberId = responseData.subscriber_id || payload.subscriber_id || `TMP-${Date.now()}`;
+  return {
+    subscriber_id: subscriberId,
+    account_no: responseData.account_no || payload.account_no || '',
+    full_name: payload.full_name || responseData.full_name || '',
+    address: payload.address || responseData.address || '',
+    contact_number: payload.contact_number || responseData.contact_number || '',
+    email: payload.email || responseData.email || '',
+    plan_name: payload.plan_name || responseData.plan_name || '',
+    monthly_fee: responseData.monthly_fee || payload.monthly_fee || 0,
+    installation_date: responseData.installation_date || payload.installation_date || '',
+    due_day: responseData.due_day || payload.due_day || '',
+    status: responseData.status || payload.status || 'ACTIVE',
+    portal_password: responseData.portal_password || payload.portal_password || '',
+    MAC_address: responseData.MAC_address || payload.MAC_address || '',
+    assigned_ip: responseData.assigned_ip || payload.assigned_ip || '',
+    olt_port: responseData.olt_port || payload.olt_port || '',
+    onu_serial: responseData.onu_serial || payload.onu_serial || '',
+    remarks: responseData.remarks || payload.remarks || ''
+  };
+}
+
 function upsertSubscriberCache(subscriber) {
   if (!subscriber || !subscriber.subscriber_id) return;
 
@@ -369,6 +393,40 @@ function resetFormMode() {
   showMessage("formMessage", "", false);
 }
 
+function upsertPaymentCache(payment) {
+  if (!payment) return;
+
+  const key = String(payment.payment_id || '');
+  const index = paymentsCache.findIndex((item) => String(item.payment_id || '') === key && key);
+
+  if (index >= 0) {
+    paymentsCache[index] = { ...paymentsCache[index], ...payment };
+  } else {
+    paymentsCache.unshift(payment);
+  }
+
+  renderPayments(paymentsCache);
+}
+
+function buildPaymentFromPayload(payload = {}, responseData = {}) {
+  return {
+    payment_id: responseData.payment_id || `TMP-${Date.now()}`,
+    billing_id: responseData.billing_id || '',
+    account_no: responseData.account_no || payload.account_no || '',
+    full_name: responseData.full_name || payload.full_name || '',
+    payment_date: responseData.payment_date || payload.payment_date || '',
+    amount: responseData.amount || payload.amount || 0,
+    payment_method: responseData.payment_method || payload.payment_method || '',
+    reference: responseData.reference || payload.reference || ''
+  };
+}
+
+function refreshAfterDelay(callback, delay = 1200) {
+  window.setTimeout(() => {
+    Promise.resolve(callback()).catch((err) => console.error('Delayed refresh error:', err));
+  }, delay);
+}
+
 async function addSubscriber() {
   if (isSavingSubscriber) return;
   isSavingSubscriber = true;
@@ -386,7 +444,8 @@ async function addSubscriber() {
     }
 
     const newAccountNo = result?.data?.account_no || "";
-    upsertSubscriberCache(result?.data || null);
+    const localSubscriber = buildSubscriberFromPayload(payload, result?.data || {});
+    upsertSubscriberCache(localSubscriber);
 
     resetFormMode();
     showMessage(
@@ -399,6 +458,16 @@ async function addSubscriber() {
       loadSubscribers(),
       loadDashboardSummary()
     ]);
+
+    refreshAfterDelay(() => Promise.allSettled([
+      loadSubscribers(),
+      loadDashboardSummary()
+    ]));
+
+    refreshAfterDelay(() => Promise.allSettled([
+      loadSubscribers(),
+      loadDashboardSummary()
+    ]));
   } catch (err) {
     console.error("addSubscriber error:", err);
     showMessage("formMessage", "Unable to save subscriber.", true);
@@ -423,7 +492,7 @@ async function updateSubscriber() {
       return;
     }
 
-    upsertSubscriberCache(result?.data || null);
+    upsertSubscriberCache(buildSubscriberFromPayload(payload, result?.data || {}));
     resetFormMode();
     showMessage("formMessage", "Subscriber updated successfully.", false);
 
@@ -606,6 +675,8 @@ async function addPayment() {
       showMessage("paymentMessage", "Payment recorded successfully.", false);
     }
 
+    upsertPaymentCache(buildPaymentFromPayload(payload, result?.data || {}));
+
     await Promise.allSettled([
       loadPayments(),
       loadBilling(),
@@ -613,6 +684,14 @@ async function addPayment() {
       loadSubscribers(),
       loadDashboardSummary()
     ]);
+
+    refreshAfterDelay(() => Promise.allSettled([
+      loadPayments(),
+      loadBilling(),
+      loadBillingSummary(),
+      loadSubscribers(),
+      loadDashboardSummary()
+    ]));
   } catch (err) {
     console.error("addPayment error:", err);
     showMessage("paymentMessage", "Unable to save payment.", true);
@@ -633,7 +712,8 @@ async function loadPayments() {
       return;
     }
 
-    renderPayments(Array.isArray(result.data) ? result.data : []);
+    paymentsCache = Array.isArray(result.data) ? result.data : [];
+    renderPayments(paymentsCache);
   } catch (err) {
     console.error("loadPayments error:", err);
     showMessage("paymentMessage", "Failed to load payments.", true);
