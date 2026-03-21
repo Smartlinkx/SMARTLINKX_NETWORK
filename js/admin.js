@@ -269,9 +269,11 @@ function upsertSubscriberCache(subscriber) {
     subscribersCache.unshift(subscriber);
   }
 
-  updateSubscriberStats();
+  updateSummaryCards();
   renderSubscribers(getValue("searchInput"));
+  renderCoreUsers();
 }
+
 
 function renderSubscribers(keyword = "") {
   const tbody = document.getElementById("subscriberTableBody");

@@ -677,6 +677,35 @@ function escapeJs(value) {
 }
 
 
+
+function getValue(id) {
+  return document.getElementById(id)?.value?.trim?.() || "";
+}
+
+function setValue(id, value) {
+  const el = document.getElementById(id);
+  if (el) el.value = value ?? "";
+}
+
+function setText(id, value) {
+  const el = document.getElementById(id);
+  if (el) el.textContent = value ?? "";
+}
+
+async function loadDashboardSummary() {
+  try {
+    const result = await apiGet({ action: "getBillingStatusSummary", days: 7 });
+    if (!result || !result.success) return;
+
+    const data = result.data || {};
+    setText("cardOverdue", (data.overdue || []).length);
+    setText("cardDueToday", (data.dueToday || []).length);
+    setText("cardDueSoon", (data.dueSoon || []).length);
+  } catch (err) {
+    console.error("loadDashboardSummary error:", err);
+  }
+}
+
 function renderCoreUsers() {
   const tbody = document.getElementById("coreUserTableBody");
   if (!tbody) return;
