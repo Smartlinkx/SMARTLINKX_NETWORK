@@ -1,28 +1,35 @@
 const AUTH_STORAGE_KEY = "smartlinkx_current_user";
 
-async function apiRequest(method, payload = null) {
-  if (!window.APP_CONFIG || !APP_CONFIG.API_BASE_URL) {
+async function apiRequest(method, endpoint = "", payload = null) {
+  if (!window.APP_CONFIG || !window.APP_CONFIG.API_BASE_URL) {
     throw new Error("Missing APP_CONFIG.API_BASE_URL");
   }
+
+  const baseUrl = window.APP_CONFIG.API_BASE_URL;
+  const url = endpoint ? `${baseUrl}/${endpoint}` : baseUrl;
 
   try {
     let response;
 
     if (method === "GET") {
       const query = payload ? new URLSearchParams(payload).toString() : "";
-      const url = query
-        ? `${APP_CONFIG.API_BASE_URL}?${query}`
-        : APP_CONFIG.API_BASE_URL;
-
-      response = await fetch(url, {
-        method: "GET"
+      const getUrl = query ? `${url}?${query}` : url;
+      
+      console.log(`GET ${getUrl}`); // Debug log
+      
+      response = await fetch(getUrl, {
+        method: "GET",
+        credentials: "same-origin" // Include cookies if needed
       });
     } else {
-      response = await fetch(APP_CONFIG.API_BASE_URL, {
+      console.log(`POST ${url}`, payload); // Debug log
+      
+      response = await fetch(url, {
         method: "POST",
         headers: {
           "Content-Type": "application/json"
         },
+        credentials: "same-origin", // Include cookies if needed
         body: JSON.stringify(payload || {})
       });
     }
@@ -33,11 +40,12 @@ async function apiRequest(method, payload = null) {
     try {
       data = JSON.parse(text);
     } catch (err) {
-      throw new Error("Invalid JSON response: " + text);
+      console.error("Invalid JSON response:", text.substring(0, 200)); // First 200 chars
+      throw new Error("Invalid JSON response from server");
     }
 
     if (!data.success) {
-      throw new Error(data.message || "Request failed");
+      throw new Error(data.message || data.error || "Request failed");
     }
 
     return data;
@@ -47,12 +55,12 @@ async function apiRequest(method, payload = null) {
   }
 }
 
-function apiGet(params) {
-  return apiRequest("GET", params);
+function apiGet(endpoint = "", params) {
+  return apiRequest("GET", endpoint, params);
 }
 
-function apiPost(payload) {
-  return apiRequest("POST", payload);
+function apiPost(endpoint = "", payload) {
+  return apiRequest("POST", endpoint, payload);
 }
 
 function showMessage(id, message, isError = false) {
@@ -60,7 +68,16 @@ function showMessage(id, message, isError = false) {
   if (!el) return;
 
   el.innerText = message || "";
-  el.style.color = isError ? "red" : "green";
+  el.style.color = isError ? "#dc3545" : "#28a745"; // Bootstrap colors
+  el.style.display = message ? "block" : "none";
+  
+  // Auto hide after 5 seconds
+  if (message) {
+    setTimeout(() => {
+      el.innerText = "";
+      el.style.display = "none";
+    }, 5000);
+  }
 }
 
 function saveCurrentUser(user) {
@@ -85,20 +102,40 @@ function clearCurrentUser() {
 }
 
 async function login(username, password) {
-  const result = await apiPost({
-    action: "loginUser",
-    username,
-    password
-  });
+  try {
+    console.log("Attempting login for:", username);
+    
+    const result = await apiPost("login", {  // ← Fixed: specify "login" endpoint
+      action: "loginUser",
+      username: username.trim(),
+      password: password.trim()
+    });
 
-  if (result && result.success && result.data) {
-    saveCurrentUser(result.data);
+    console.log("Login result:", result);
+
+    if (result && result.success && result.data) {
+      saveCurrentUser(result.data);
+      return { success: true, data: result.data };
+    }
+    
+    showMessage("login-message", result?.message || "Login failed", true);
+    return { success: false, message: result?.message || "Login failed" };
+    
+  } catch (error) {
+    console.error("Login error:", error);
+    showMessage("login-message", error.message || "Login error occurred", true);
+    return { success: false, message: error.message || "Login error occurred" };
   }
-
-  return result;
 }
 
-function logout() {
+async function logout() {
+  try {
+    // Optional: call logout API
+    await apiPost("logout");
+  } catch (err) {
+    console.warn("Logout API failed:", err);
+  }
+  
   clearCurrentUser();
   window.location.href = "index.html";
 }
@@ -117,6 +154,7 @@ function requireRole(...allowedRoles) {
     .filter(Boolean);
 
   if (normalizedAllowed.length && !normalizedAllowed.includes(currentRole)) {
+    console.warn(`Access denied. User role: ${currentRole}, Required:`, normalizedAllowed);
     clearCurrentUser();
     window.location.href = "index.html";
     return null;
@@ -124,3 +162,15 @@ function requireRole(...allowedRoles) {
 
   return user;
 }
+
+// Initialize app on load
+document.addEventListener("DOMContentLoaded", function() {
+  // Check if user is already logged in on protected pages
+  if (window.location.pathname.includes("dashboard") || 
+      window.location.pathname.includes("admin")) {
+    const user = getCurrentUser();
+    if (!user) {
+      window.location.href = "index.html";
+    }
+  }
+});
