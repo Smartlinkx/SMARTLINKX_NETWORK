@@ -8,46 +8,45 @@ async function apiRequest(method, payload = null) {
   }
 
   try {
-    let url = baseUrl;
     let response;
 
     if (method === "GET") {
-      const query = payload ? new URLSearchParams(payload).toString() : "";
-      url = query ? `${baseUrl}?${query}` : baseUrl;
+      const params = payload || {};
+      const query = new URLSearchParams(params).toString();
+      const url = query ? `${baseUrl}?${query}` : baseUrl;
+      
       console.log(`GET ${url}`);
       
       response = await fetch(url, {
         method: "GET",
-        headers: {
-          "Accept": "application/json"
-        }
+        headers: { "Accept": "application/json" }
       });
     } else {
-      // Google Apps Script uses POST with form data in query params
-      const params = new URLSearchParams(payload || {});
-      url = `${baseUrl}?${params.toString()}`;
-      console.log(`POST ${url}`);
+      // POST for GAS - send JSON body (matches your doPost(readJsonBody_(e)))
+      console.log("POST payload:", payload);
       
-      response = await fetch(url, {
+      response = await fetch(baseUrl, {
         method: "POST",
         headers: {
-          "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8"
-        }
+          "Content-Type": "application/json",
+          "Accept": "application/json"
+        },
+        body: JSON.stringify(payload || {})
       });
     }
 
     const text = await response.text();
-    console.log("Raw response:", text.substring(0, 200));
+    console.log("Response:", text.substring(0, 300));
 
     let data;
     try {
       data = JSON.parse(text);
     } catch (err) {
-      throw new Error("Invalid JSON: " + text.substring(0, 200));
+      throw new Error(`Invalid JSON: ${text.substring(0, 200)}`);
     }
 
     if (!data.success) {
-      throw new Error(data.message || data.error || "Request failed");
+      throw new Error(data.message || "Request failed");
     }
 
     return data;
@@ -57,12 +56,12 @@ async function apiRequest(method, payload = null) {
   }
 }
 
-function apiPost(payload) {
-  return apiRequest("POST", payload);
-}
-
 function apiGet(params) {
   return apiRequest("GET", params);
+}
+
+function apiPost(payload) {
+  return apiRequest("POST", payload);
 }
 
 function showMessage(id, message, isError = false) {
@@ -109,7 +108,6 @@ async function login(username, password) {
       password: password.trim()
     };
     
-    console.log("Login payload:", payload);
     const result = await apiPost(payload);
     
     if (result && result.success && result.data) {
@@ -117,10 +115,10 @@ async function login(username, password) {
       return { success: true, data: result.data };
     }
     
-    return { success: false, message: result?.message || "Login failed" };
+    return { success: false, message: result?.message || "Invalid credentials" };
   } catch (error) {
     console.error("Login error:", error);
-    return { success: false, message: error.message };
+    return { success: false, message: error.message || "Login failed" };
   }
 }
 
