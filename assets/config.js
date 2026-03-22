@@ -1,6 +1,6 @@
 // assets/config.js - UPDATE TO THIS
 window.APP_CONFIG = {
-  API_BASE_URL: "https://script.google.com/macros/s/AKfycbxNv_kyi8Nadfycju_ttrMcCh2ms7dLfJUVuaDqyVVyL7X73CN-MRzEK5v-dMLqbWh4kA/exec"
+  API_BASE_URL: "https://script.google.com/macros/s/AKfycbxdCpFXzxlBdCf-ysLvbcev55lwC_ButwiuF8WOUpTpwEAOv_kD6mc4-Woq0hEEZqRCQw/exec"
 };
 
 console.log("Config loaded:", window.APP_CONFIG);
