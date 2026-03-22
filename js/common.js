@@ -9,7 +9,6 @@ const DEFAULT_API_BASE_URL = "https://script.google.com/macros/s/AKfycbzjqFmAsNW
   if (!window.APP_CONFIG.API_BASE_URL) {
     const metaApiBase = document.querySelector('meta[name="api-base-url"]')?.content?.trim();
     const storedApiBase = localStorage.getItem("smartlinkx_api_base_url")?.trim();
-
     window.APP_CONFIG.API_BASE_URL = metaApiBase || storedApiBase || DEFAULT_API_BASE_URL;
   }
 
@@ -22,12 +21,17 @@ const DEFAULT_API_BASE_URL = "https://script.google.com/macros/s/AKfycbzjqFmAsNW
 
 function getApiBaseUrl() {
   const baseUrl = String(window.APP_CONFIG?.API_BASE_URL || "").trim();
-
   if (!baseUrl) {
     throw new Error("Missing APP_CONFIG.API_BASE_URL");
   }
-
   return baseUrl;
+}
+
+function normalizeApiDataShape(data) {
+  if (data && typeof data === "object" && !("success" in data)) {
+    return { success: true, message: "OK", data };
+  }
+  return data;
 }
 
 async function apiRequest(method, payload = null) {
@@ -40,42 +44,48 @@ async function apiRequest(method, payload = null) {
       const params = payload || {};
       const query = new URLSearchParams(params).toString();
       const url = query ? `${baseUrl}?${query}` : baseUrl;
-
       console.log(`GET ${url}`);
-
       response = await fetch(url, {
         method: "GET",
-        headers: { Accept: "application/json" }
+        headers: { Accept: "application/json, text/plain, */*" }
       });
     } else {
       console.log("POST payload:", payload);
-
       response = await fetch(baseUrl, {
         method: "POST",
         headers: {
           "Content-Type": "text/plain;charset=utf-8",
-          Accept: "application/json"
+          Accept: "application/json, text/plain, */*"
         },
         body: JSON.stringify(payload || {})
       });
     }
 
     const text = await response.text();
-    console.log("Response:", text.substring(0, 300));
+    console.log("Response:", text.substring(0, 500));
 
     let data;
     try {
       data = JSON.parse(text);
     } catch (err) {
-      throw new Error(`Invalid JSON: ${text.substring(0, 200)}`);
+      const cleaned = String(text || "").trim();
+      if (!cleaned) {
+        throw new Error("Empty response from server.");
+      }
+      if (cleaned.startsWith("<!DOCTYPE") || cleaned.startsWith("<html")) {
+        throw new Error("Server returned HTML instead of JSON. Check Apps Script deployment URL and permissions.");
+      }
+      throw new Error(`Invalid JSON: ${cleaned.substring(0, 200)}`);
     }
+
+    data = normalizeApiDataShape(data);
 
     if (!response.ok) {
-      throw new Error(data.message || `HTTP ${response.status}`);
+      throw new Error(data?.message || `HTTP ${response.status}`);
     }
 
-    if (!data.success) {
-      throw new Error(data.message || "Request failed");
+    if (!data || data.success === false) {
+      throw new Error(data?.message || "Request failed");
     }
 
     return data;
@@ -103,10 +113,37 @@ function showMessage(id, message, isError = false) {
 
   if (message) {
     setTimeout(() => {
-      el.innerText = "";
-      el.style.display = "none";
+      if (el.innerText === message) {
+        el.innerText = "";
+        el.style.display = "none";
+      }
     }, 5000);
   }
+}
+
+function escapeHtml(value) {
+  return String(value ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
+function formatMoney(value) {
+  const num = Number(value || 0);
+  if (!Number.isFinite(num)) return "₱0.00";
+  return new Intl.NumberFormat("en-PH", {
+    style: "currency",
+    currency: "PHP",
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2
+  }).format(num);
+}
+
+function toNumber(value) {
+  const num = Number(value || 0);
+  return Number.isFinite(num) ? num : 0;
 }
 
 function saveCurrentUser(user) {
@@ -131,7 +168,6 @@ function clearCurrentUser() {
 
 function getRedirectPageForRole(role) {
   const normalizedRole = String(role || "").trim().toUpperCase();
-
   if (normalizedRole === "ADMIN") return "admin.html";
   if (normalizedRole === "STAFF") return "staff.html";
   return "index.html";
