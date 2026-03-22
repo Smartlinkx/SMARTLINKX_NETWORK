@@ -1,19 +1,19 @@
 const AUTH_STORAGE_KEY = "smartlinkx_current_user";
+const API_STORAGE_KEY = "smartlinkx_api_base_url";
 const DEFAULT_API_BASE_URL = "https://script.google.com/macros/s/AKfycbzjqFmAsNW1aGcBhkKOUTtGz_D15sj7kurO_AUSUVH-pH2G0Me5gStO_JNUxJPiFu4/exec";
 
 (function ensureAppConfig() {
-  if (!window.APP_CONFIG) {
-    window.APP_CONFIG = {};
-  }
+  if (!window.APP_CONFIG) window.APP_CONFIG = {};
+
+  const metaApiBase = document.querySelector('meta[name="api-base-url"]')?.content?.trim();
+  const storedApiBase = localStorage.getItem(API_STORAGE_KEY)?.trim();
 
   if (!window.APP_CONFIG.API_BASE_URL) {
-    const metaApiBase = document.querySelector('meta[name="api-base-url"]')?.content?.trim();
-    const storedApiBase = localStorage.getItem("smartlinkx_api_base_url")?.trim();
     window.APP_CONFIG.API_BASE_URL = metaApiBase || storedApiBase || DEFAULT_API_BASE_URL;
   }
 
   if (window.APP_CONFIG.API_BASE_URL) {
-    localStorage.setItem("smartlinkx_api_base_url", window.APP_CONFIG.API_BASE_URL);
+    localStorage.setItem(API_STORAGE_KEY, window.APP_CONFIG.API_BASE_URL);
   }
 
   console.log("APP_CONFIG ready:", window.APP_CONFIG);
@@ -21,16 +21,49 @@ const DEFAULT_API_BASE_URL = "https://script.google.com/macros/s/AKfycbzjqFmAsNW
 
 function getApiBaseUrl() {
   const baseUrl = String(window.APP_CONFIG?.API_BASE_URL || "").trim();
-  if (!baseUrl) {
-    throw new Error("Missing APP_CONFIG.API_BASE_URL");
-  }
+  if (!baseUrl) throw new Error("Missing APP_CONFIG.API_BASE_URL");
   return baseUrl;
 }
 
-function normalizeApiDataShape(data) {
-  if (data && typeof data === "object" && !("success" in data)) {
-    return { success: true, message: "OK", data };
+function buildUrl(baseUrl, params = {}) {
+  const search = new URLSearchParams();
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value === undefined || value === null) return;
+    search.append(key, String(value));
+  });
+  const query = search.toString();
+  return query ? `${baseUrl}?${query}` : baseUrl;
+}
+
+async function parseApiResponse(response, method, payload) {
+  const text = await response.text();
+  const trimmed = String(text || "").trim();
+  console.log(`${method} response (${response.status}):`, trimmed.substring(0, 300));
+
+  if (!trimmed) {
+    const action = payload?.action ? ` for action \"${payload.action}\"` : "";
+    throw new Error(`Empty response from server${action}. Check your Apps Script deployment and make sure doPost/doGet returns JSON.`);
   }
+
+  if (trimmed.startsWith("<!DOCTYPE") || trimmed.startsWith("<html")) {
+    throw new Error("Server returned HTML instead of JSON. Your Apps Script web app may be undeployed, unauthorized, or pointing to the wrong URL.");
+  }
+
+  let data;
+  try {
+    data = JSON.parse(trimmed);
+  } catch (err) {
+    throw new Error(`Invalid JSON from server: ${trimmed.substring(0, 200)}`);
+  }
+
+  if (!response.ok) {
+    throw new Error(data.message || `HTTP ${response.status}`);
+  }
+
+  if (data.success === false) {
+    throw new Error(data.message || "Request failed");
+  }
+
   return data;
 }
 
@@ -38,57 +71,44 @@ async function apiRequest(method, payload = null) {
   const baseUrl = getApiBaseUrl();
 
   try {
-    let response;
-
     if (method === "GET") {
-      const params = payload || {};
-      const query = new URLSearchParams(params).toString();
-      const url = query ? `${baseUrl}?${query}` : baseUrl;
+      const url = buildUrl(baseUrl, payload || {});
       console.log(`GET ${url}`);
-      response = await fetch(url, {
+      const response = await fetch(url, {
         method: "GET",
         headers: { Accept: "application/json, text/plain, */*" }
       });
-    } else {
-      console.log("POST payload:", payload);
-      response = await fetch(baseUrl, {
-        method: "POST",
-        headers: {
-          "Content-Type": "text/plain;charset=utf-8",
-          Accept: "application/json, text/plain, */*"
-        },
-        body: JSON.stringify(payload || {})
-      });
+      return await parseApiResponse(response, "GET", payload);
     }
 
-    const text = await response.text();
-    console.log("Response:", text.substring(0, 500));
+    console.log("POST payload:", payload);
+    let response = await fetch(baseUrl, {
+      method: "POST",
+      headers: {
+        "Content-Type": "text/plain;charset=utf-8",
+        Accept: "application/json, text/plain, */*"
+      },
+      body: JSON.stringify(payload || {})
+    });
 
-    let data;
     try {
-      data = JSON.parse(text);
-    } catch (err) {
-      const cleaned = String(text || "").trim();
-      if (!cleaned) {
-        throw new Error("Empty response from server.");
+      return await parseApiResponse(response, "POST", payload);
+    } catch (postErr) {
+      const message = String(postErr?.message || "");
+      const canRetryAsGet = payload && typeof payload === "object" && Object.keys(payload).length > 0;
+
+      if (canRetryAsGet && (message.includes("Empty response from server") || message.includes("returned HTML") || message.includes("HTTP 405"))) {
+        console.warn("POST failed, retrying as GET with query params.", postErr);
+        const url = buildUrl(baseUrl, payload);
+        response = await fetch(url, {
+          method: "GET",
+          headers: { Accept: "application/json, text/plain, */*" }
+        });
+        return await parseApiResponse(response, "GET-fallback", payload);
       }
-      if (cleaned.startsWith("<!DOCTYPE") || cleaned.startsWith("<html")) {
-        throw new Error("Server returned HTML instead of JSON. Check Apps Script deployment URL and permissions.");
-      }
-      throw new Error(`Invalid JSON: ${cleaned.substring(0, 200)}`);
+
+      throw postErr;
     }
-
-    data = normalizeApiDataShape(data);
-
-    if (!response.ok) {
-      throw new Error(data?.message || `HTTP ${response.status}`);
-    }
-
-    if (!data || data.success === false) {
-      throw new Error(data?.message || "Request failed");
-    }
-
-    return data;
   } catch (err) {
     console.error("API ERROR:", err);
     throw err;
@@ -113,37 +133,10 @@ function showMessage(id, message, isError = false) {
 
   if (message) {
     setTimeout(() => {
-      if (el.innerText === message) {
-        el.innerText = "";
-        el.style.display = "none";
-      }
+      el.innerText = "";
+      el.style.display = "none";
     }, 5000);
   }
-}
-
-function escapeHtml(value) {
-  return String(value ?? "")
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#39;");
-}
-
-function formatMoney(value) {
-  const num = Number(value || 0);
-  if (!Number.isFinite(num)) return "₱0.00";
-  return new Intl.NumberFormat("en-PH", {
-    style: "currency",
-    currency: "PHP",
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2
-  }).format(num);
-}
-
-function toNumber(value) {
-  const num = Number(value || 0);
-  return Number.isFinite(num) ? num : 0;
 }
 
 function saveCurrentUser(user) {
@@ -175,15 +168,13 @@ function getRedirectPageForRole(role) {
 
 async function login(username, password) {
   try {
-    const payload = {
+    const result = await apiPost({
       action: "loginUser",
-      username: username.trim(),
-      password: password.trim()
-    };
+      username: String(username || "").trim(),
+      password: String(password || "").trim()
+    });
 
-    const result = await apiPost(payload);
-
-    if (result && result.success && result.data) {
+    if (result && result.success !== false && result.data) {
       saveCurrentUser(result.data);
       return { success: true, data: result.data };
     }
@@ -214,8 +205,7 @@ function requireRole(...allowedRoles) {
     .filter(Boolean);
 
   if (normalizedAllowed.length && !normalizedAllowed.includes(currentRole)) {
-    const redirectTo = getRedirectPageForRole(currentRole);
-    window.location.href = redirectTo;
+    window.location.href = getRedirectPageForRole(currentRole);
     return null;
   }
 
