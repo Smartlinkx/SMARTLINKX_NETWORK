@@ -211,3 +211,36 @@ function requireRole(...allowedRoles) {
 
   return user;
 }
+
+
+function escapeHtml(value) {
+  return String(value ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
+function toNumber(value) {
+  if (typeof value === "number") return Number.isFinite(value) ? value : 0;
+  if (value === null || value === undefined || value === "") return 0;
+
+  const normalized = String(value)
+    .replace(/,/g, "")
+    .replace(/[^0-9.-]/g, "")
+    .trim();
+
+  const num = Number(normalized);
+  return Number.isFinite(num) ? num : 0;
+}
+
+function formatMoney(value) {
+  const amount = toNumber(value);
+  return new Intl.NumberFormat("en-PH", {
+    style: "currency",
+    currency: "PHP",
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2
+  }).format(amount);
+}
