@@ -63,12 +63,13 @@ function apiPost(endpoint = "", payload) {
   return apiRequest("POST", endpoint, payload);
 }
 
+// In common.js, update this line:
 function showMessage(id, message, isError = false) {
-  const el = document.getElementById(id);
+  const el = document.getElementById(id);  // Works with loginMessage
   if (!el) return;
 
   el.innerText = message || "";
-  el.style.color = isError ? "#dc3545" : "#28a745"; // Bootstrap colors
+  el.className = `message ${isError ? 'error' : 'success'}`;
   el.style.display = message ? "block" : "none";
   
   // Auto hide after 5 seconds
