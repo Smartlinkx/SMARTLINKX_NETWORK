@@ -709,7 +709,7 @@ async function generateBilling() {
 
   try {
     showMessage("billingMessage", "Generating billing...", false);
-    const result = await apiGet({ action: "generateBilling" });
+    const result = await apiPost({ action: "generateBilling" });
     const totalCreated = Number(result?.data?.total_created ?? result?.data?.created ?? 0);
     showMessage("billingMessage", `${result.message || "Billing generated successfully"} (${totalCreated})`, false);
     await Promise.allSettled([loadBilling(), loadBillingSummary(), loadSubscribers()]);
