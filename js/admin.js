@@ -11,16 +11,17 @@ async function generateBilling() {
       action: "generateBilling"
     });
 
+    console.log("Billing API Result:", result);
+
     const totalCreated =
       Number(result?.data?.total_created ?? result?.data?.created ?? 0);
 
     showMessage(
       "billingMessage",
-      result.message || `Billing generated successfully (${totalCreated})`,
+      `${result.message || "Billing generated successfully"} (${totalCreated})`,
       false
     );
 
-    // reload data safely
     if (typeof loadBilling === "function") loadBilling();
     if (typeof loadBillingSummary === "function") loadBillingSummary();
     if (typeof loadSubscribers === "function") loadSubscribers();
