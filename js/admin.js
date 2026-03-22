@@ -580,7 +580,7 @@ function renderBilling(data) {
       <td>${escapeHtml(item.billing_month)}</td>
       <td>${escapeHtml(item.due_date)}</td>
       <td>${formatMoney(item.amount)}</td>
-      <td>${formatMoney(item.applied_payment || 0)}</td>
+      <td>${formatMoney(item.applied_total ?? item.applied_payment ?? 0)}</td>
       <td>${formatMoney(item.balance || 0)}</td>
       <td>${escapeHtml(item.status)}</td>
     </tr>
@@ -923,7 +923,7 @@ function renderLedgerBills(data) {
       <td>${escapeHtml(item.billing_month)}</td>
       <td>${escapeHtml(item.due_date)}</td>
       <td>${formatMoney(item.amount)}</td>
-      <td>${formatMoney(item.applied_payment || 0)}</td>
+      <td>${formatMoney(item.applied_total ?? item.applied_payment ?? 0)}</td>
       <td>${formatMoney(item.balance || 0)}</td>
       <td>${escapeHtml(item.status)}</td>
     </tr>
@@ -1125,7 +1125,7 @@ function populateCoreUserBilling(ledger) {
       <td>${escapeHtml(item.billing_month || "-")}</td>
       <td>${escapeHtml(item.due_date || "-")}</td>
       <td>${formatMoney(item.amount || 0)}</td>
-      <td>${formatMoney(item.applied_payment || 0)}</td>
+      <td>${formatMoney(item.applied_total ?? item.applied_payment ?? 0)}</td>
       <td>${formatMoney(item.balance || 0)}</td>
       <td>${escapeHtml(item.status || "-")}</td>
     </tr>
