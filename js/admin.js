@@ -704,20 +704,86 @@ function renderLedgerPayments(data) {
 let isGeneratingBilling = false;
 
 async function generateBilling() {
-  if (isGeneratingBilling) return;
-  isGeneratingBilling = true;
+  const btn = document.getElementById("generateBillingBtn");
+  const originalText = btn ? btn.textContent : "";
 
   try {
-    showMessage("billingMessage", "Generating billing...", false);
-    const result = await apiGet({ action: "generateBilling" });
-    const totalCreated = Number(result?.data?.total_created ?? result?.data?.created ?? 0);
-    showMessage("billingMessage", `${result.message || "Billing generated successfully"} (${totalCreated})`, false);
-    await Promise.allSettled([loadBilling(), loadBillingSummary(), loadSubscribers()]);
+    if (btn) {
+      btn.disabled = true;
+      btn.textContent = "Generating...";
+    }
+    showMessage("billingMessage", "Generating monthly billing... Please wait.", false);
+
+    let result = null;
+    let lastError = null;
+    const maxRetries = 3;
+
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      try {
+        console.log(`generateBilling attempt ${attempt}/${maxRetries}`);
+        result = await apiPost({ action: "generateBilling" });
+        lastError = null;
+        break; // success — exit retry loop
+      } catch (err) {
+        lastError = err;
+        console.warn(`generateBilling attempt ${attempt} failed:`, err.message);
+
+        const isRetryable =
+          err.message.includes("Empty response") ||
+          err.message.includes("returned HTML") ||
+          err.message.includes("Failed to fetch") ||
+          err.message.includes("NetworkError");
+
+        if (!isRetryable || attempt === maxRetries) break;
+
+        // Wait before retrying (exponential backoff)
+        const waitMs = attempt * 2000;
+        showMessage(
+          "billingMessage",
+          `Attempt ${attempt} failed. Retrying in ${waitMs / 1000}s...`,
+          false
+        );
+        await new Promise((resolve) => setTimeout(resolve, waitMs));
+      }
+    }
+
+    if (lastError) {
+      throw lastError;
+    }
+
+    if (!result || !result.success) {
+      showMessage(
+        "billingMessage",
+        result?.message || "Failed to generate billing.",
+        true
+      );
+      return;
+    }
+
+    const created = result?.data?.total_created ?? 0;
+    showMessage(
+      "billingMessage",
+      `Billing generated successfully. ${created} new record(s) created.`,
+      false
+    );
+
+    await Promise.allSettled([
+      loadBilling(),
+      loadBillingSummary(),
+      loadSubscribers()
+    ]);
   } catch (err) {
-    console.error("Billing error:", err);
-    showMessage("billingMessage", err.message || "Failed to generate billing.", true);
+    console.error("generateBilling error:", err);
+    showMessage(
+      "billingMessage",
+      `Error: ${err.message || "Unable to generate billing."}`,
+      true
+    );
   } finally {
-    isGeneratingBilling = false;
+    if (btn) {
+      btn.disabled = false;
+      btn.textContent = originalText || "Generate Billing";
+    }
   }
 }
 
