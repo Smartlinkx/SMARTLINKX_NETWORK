@@ -25,6 +25,7 @@ function getApiBaseUrl() {
   return baseUrl;
 }
 
+// ✅ Step 5 - buildUrl is already here and correct
 function buildUrl(baseUrl, params = {}) {
   const search = new URLSearchParams();
   Object.entries(params || {}).forEach(([key, value]) => {
@@ -41,12 +42,12 @@ async function parseApiResponse(response, method, payload) {
   console.log(`${method} response (${response.status}):`, trimmed.substring(0, 300));
 
   if (!trimmed) {
-    const action = payload?.action ? ` for action \"${payload.action}\"` : "";
-    throw new Error(`Empty response from server${action}. Check your Apps Script deployment and make sure doPost/doGet returns JSON.`);
+    const action = payload?.action ? ` for action "${payload.action}"` : "";
+    throw new Error("EMPTY_RESPONSE" + action);
   }
 
   if (trimmed.startsWith("<!DOCTYPE") || trimmed.startsWith("<html")) {
-    throw new Error("Server returned HTML instead of JSON. Your Apps Script web app may be undeployed, unauthorized, or pointing to the wrong URL.");
+    throw new Error("HTML_RESPONSE");
   }
 
   let data;
@@ -67,6 +68,7 @@ async function parseApiResponse(response, method, payload) {
   return data;
 }
 
+// ✅ Step 4 - Clean single apiRequest function
 async function apiRequest(method, payload = null) {
   const baseUrl = getApiBaseUrl();
 
@@ -77,75 +79,15 @@ async function apiRequest(method, payload = null) {
       const response = await fetch(url, {
         method: "GET",
         redirect: "follow",
-        headers: { Accept: "application/json, text/plain, */*" }
+        headers: { "Accept": "application/json, text/plain, */*" }
       });
       return await parseApiResponse(response, "GET", payload);
     }
 
     console.log("POST payload:", payload);
 
-    // Google Apps Script requires redirect:follow for POST
+    // POST - Google Apps Script requires redirect:follow
     let response = await fetch(baseUrl, {
-      method: "POST",
-      redirect: "follow",
-      headers: {
-        "Content-Type": "text/plain;charset=utf-8",
-        Accept: "application/json, text/plain, */*"
-      },
-      body: JSON.stringify(payload || {})
-    });
-
-    try {
-      return await parseApiResponse(response, "POST", payload);
-    } catch (postErr) {
-      const message = String(postErr?.message || "");
-      const isEmptyOrHtml =
-        message.includes("Empty response from server") ||
-        message.includes("returned HTML") ||
-        message.includes("HTTP 405");
-
-      // Only retry as GET for safe/read-like actions, NOT for write actions
-      const writeActions = [
-        "generateBilling",
-        "addPayment",
-        "addSubscriber",
-        "updateSubscriber",
-        "addExpense",
-        "portalLogin",
-        "loginUser",
-        "recomputeAllBilling"
-      ];
-      const actionName = payload?.action || "";
-      const isWriteAction = writeActions.includes(actionName);
-
-      if (!isWriteAction && isEmptyOrHtml && payload && typeof payload === "object") {
-        console.warn("POST failed, retrying as GET with query params.", postErr);
-        const url = buildUrl(baseUrl, payload);
-        response = await fetch(url, {
-          method: "GET",
-          redirect: "follow",
-          headers: { Accept: "application/json, text/plain, */*" }
-        });
-        return await parseApiResponse(response, "GET-fallback", payload);
-      }
-
-    // ✅ REPLACE WITH THIS
-async function apiRequest(method, payload = null) {
-  const baseUrl = getApiBaseUrl();
-
-  try {
-    if (method === "GET") {
-      const url = buildUrl(baseUrl, payload || {});
-      const response = await fetch(url, {
-        method: "GET",
-        redirect: "follow",
-        headers: { "Accept": "application/json, text/plain, */*" }
-      });
-      return await parseApiResponse(response, "GET", payload);
-    }
-
-    // POST with redirect follow - required for Google Apps Script
-    const response = await fetch(baseUrl, {
       method: "POST",
       redirect: "follow",
       headers: {
@@ -155,35 +97,63 @@ async function apiRequest(method, payload = null) {
       body: JSON.stringify(payload || {})
     });
 
-    // Check if response is ok
-    if (!response.ok && response.status !== 0) {
-      throw new Error("HTTP " + response.status + " - " + response.statusText);
-    }
-
-    const text = await response.text();
-
-    // Empty response handler
-    if (!text || text.trim() === "") {
-      throw new Error("EMPTY_RESPONSE");
-    }
-
-    // HTML response handler (GAS redirect issue)
-    if (text.trim().startsWith("<")) {
-      throw new Error("HTML_RESPONSE");
-    }
-
     try {
-      return JSON.parse(text);
-    } catch (e) {
-      throw new Error("Invalid JSON: " + text.substring(0, 100));
-    }
+      return await parseApiResponse(response, "POST", payload);
+    } catch (postErr) {
+      const message = String(postErr?.message || "");
 
+      const isEmptyOrHtml =
+        message.includes("EMPTY_RESPONSE") ||
+        message.includes("HTML_RESPONSE") ||
+        message.includes("HTTP 405");
+
+      // Write actions - do NOT retry as GET
+      const writeActions = [
+        "generateBilling",
+        "addPayment",
+        "addSubscriber",
+        "updateSubscriber",
+        "addExpense",
+        "portalLogin",
+        "loginUser",
+        "recomputeAllBilling",
+        "reconnectSubscriber",
+        "markCutoffCandidates",
+        "setupDailyAutomation"
+      ];
+
+      const actionName = payload?.action || "";
+      const isWriteAction = writeActions.includes(actionName);
+
+      // For non-write actions, retry as GET
+      if (!isWriteAction && isEmptyOrHtml && payload && typeof payload === "object") {
+        console.warn("POST failed, retrying as GET with query params.", postErr);
+        const url = buildUrl(baseUrl, payload);
+        response = await fetch(url, {
+          method: "GET",
+          redirect: "follow",
+          headers: { "Accept": "application/json, text/plain, */*" }
+        });
+        return await parseApiResponse(response, "GET-fallback", payload);
+      }
+
+      // For write actions, throw clean error
+      if (isWriteAction && isEmptyOrHtml) {
+        throw new Error(
+          `Action "${actionName}" got an empty/HTML response. ` +
+          `Retrying... If this persists, check your Apps Script deployment.`
+        );
+      }
+
+      throw postErr;
+    }
   } catch (err) {
     console.error("apiRequest error:", err.message);
     throw err;
   }
 }
 
+// ✅ Step 4 - apiGet and apiPost
 function apiGet(params) {
   return apiRequest("GET", params);
 }
@@ -280,7 +250,6 @@ function requireRole(...allowedRoles) {
 
   return user;
 }
-
 
 function escapeHtml(value) {
   return String(value ?? "")
