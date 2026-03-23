@@ -1,6 +1,6 @@
 const AUTH_STORAGE_KEY = "smartlinkx_current_user";
 const API_STORAGE_KEY = "smartlinkx_api_base_url";
-const DEFAULT_API_BASE_URL = "https://script.google.com/macros/s/AKfycbzjqFmAsNW1aGcBhkKOUTtGz_D15sj7kurO_AUSUVH-pH2G0Me5gStO_JNUxJPiFu4/exec";
+const DEFAULT_API_BASE_URL = "https://script.google.com/macros/s/AKfycbxZuGk556u6dgYQO0f-ec6idosk8qXPnzugdRMUwqjtYd_4tQeEorQWoAxoHog_OeLa6g/exec";
 
 (function ensureAppConfig() {
   if (!window.APP_CONFIG) window.APP_CONFIG = {};
