@@ -25,7 +25,7 @@ function getApiBaseUrl() {
   return baseUrl;
 }
 
-// ✅ Step 5 - buildUrl is already here and correct
+// ✅ FIXED
 function buildUrl(baseUrl, params = {}) {
   const search = new URLSearchParams();
   Object.entries(params || {}).forEach(([key, value]) => {
