@@ -129,19 +129,57 @@ async function apiRequest(method, payload = null) {
         return await parseApiResponse(response, "GET-fallback", payload);
       }
 
-      // For write actions or other errors, throw a clear message
-      if (isEmptyOrHtml && isWriteAction) {
-        throw new Error(
-          `Server returned empty response for "${actionName}". ` +
-          `Please verify your Apps Script is deployed as "Execute as: Me" ` +
-          `and "Who has access: Anyone". Then try again.`
-        );
-      }
+    // ✅ REPLACE WITH THIS
+async function apiRequest(method, payload = null) {
+  const baseUrl = getApiBaseUrl();
 
-      throw postErr;
+  try {
+    if (method === "GET") {
+      const url = buildUrl(baseUrl, payload || {});
+      const response = await fetch(url, {
+        method: "GET",
+        redirect: "follow",
+        headers: { "Accept": "application/json, text/plain, */*" }
+      });
+      return await parseApiResponse(response, "GET", payload);
     }
+
+    // POST with redirect follow - required for Google Apps Script
+    const response = await fetch(baseUrl, {
+      method: "POST",
+      redirect: "follow",
+      headers: {
+        "Content-Type": "text/plain;charset=utf-8",
+        "Accept": "application/json, text/plain, */*"
+      },
+      body: JSON.stringify(payload || {})
+    });
+
+    // Check if response is ok
+    if (!response.ok && response.status !== 0) {
+      throw new Error("HTTP " + response.status + " - " + response.statusText);
+    }
+
+    const text = await response.text();
+
+    // Empty response handler
+    if (!text || text.trim() === "") {
+      throw new Error("EMPTY_RESPONSE");
+    }
+
+    // HTML response handler (GAS redirect issue)
+    if (text.trim().startsWith("<")) {
+      throw new Error("HTML_RESPONSE");
+    }
+
+    try {
+      return JSON.parse(text);
+    } catch (e) {
+      throw new Error("Invalid JSON: " + text.substring(0, 100));
+    }
+
   } catch (err) {
-    console.error("API ERROR:", err);
+    console.error("apiRequest error:", err.message);
     throw err;
   }
 }
