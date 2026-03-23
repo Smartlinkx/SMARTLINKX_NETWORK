@@ -7,8 +7,10 @@ const API_STORAGE_KEY = "smartlinkx_api_base_url";
   const metaApiBase = document.querySelector('meta[name="api-base-url"]')?.content?.trim();
   const storedApiBase = localStorage.getItem(API_STORAGE_KEY)?.trim();
 
+  const defaultApiBase = (typeof DEFAULT_API_BASE_URL !== 'undefined' && DEFAULT_API_BASE_URL) ? DEFAULT_API_BASE_URL : '';
+
   if (!window.APP_CONFIG.API_BASE_URL) {
-    window.APP_CONFIG.API_BASE_URL = metaApiBase || storedApiBase || DEFAULT_API_BASE_URL;
+    window.APP_CONFIG.API_BASE_URL = metaApiBase || storedApiBase || defaultApiBase;
   }
 
   if (window.APP_CONFIG.API_BASE_URL) {
@@ -45,7 +47,7 @@ async function parseApiResponse(response, method, payload) {
     throw new Error("EMPTY_RESPONSE" + action);
   }
 
-  if (trimmed.startsWith("<!DOCTYPE") || trimmed.startsWith("<html")) {
+  if (/^<!doctype/i.test(trimmed) || /^<html/i.test(trimmed)) {
     throw new Error("HTML_RESPONSE");
   }
 

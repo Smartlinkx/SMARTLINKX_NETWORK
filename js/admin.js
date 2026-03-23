@@ -717,50 +717,30 @@ async function generateBilling() {
 
     let result = null;
     let lastError = null;
-    const maxRetries = 3;
 
-    for (let attempt = 1; attempt <= maxRetries; attempt++) {
-      try {
-        console.log("generateBilling attempt " + attempt + "/" + maxRetries);
+    try {
+      console.log("generateBilling using GET route first...");
+      result = await apiGet({ action: "generateBilling" });
+    } catch (getErr) {
+      lastError = getErr;
+      console.warn("GET generateBilling failed:", getErr.message);
 
-        // Try POST first
-        result = await apiPost({ action: "generateBilling" });
-        lastError = null;
-        break;
+      const message = String(getErr?.message || "");
+      const shouldTryPost =
+        message.includes("Invalid GET action") ||
+        message.includes("Failed to fetch") ||
+        message.includes("NetworkError") ||
+        message.includes("Load failed") ||
+        message.includes("EMPTY_RESPONSE") ||
+        message.includes("HTML_RESPONSE");
 
-      } catch (err) {
-        lastError = err;
-        console.warn("Attempt " + attempt + " failed:", err.message);
-
-        const isRetryable =
-          err.message.includes("EMPTY_RESPONSE") ||
-          err.message.includes("HTML_RESPONSE") ||
-          err.message.includes("empty/HTML response") ||
-          err.message.includes("Failed to fetch") ||
-          err.message.includes("NetworkError") ||
-          err.message.includes("Load failed");
-
-        if (!isRetryable || attempt === maxRetries) break;
-
-        // Try GET fallback on retry
-        try {
-          console.log("Trying GET fallback for generateBilling...");
-          result = await apiGet({ action: "generateBilling" });
-          lastError = null;
-          break;
-        } catch (getErr) {
-          console.warn("GET fallback also failed:", getErr.message);
-          lastError = getErr;
-        }
-
-        const waitMs = attempt * 2000;
-        showMessage(
-          "billingMessage",
-          "Attempt " + attempt + " failed. Retrying in " + (waitMs / 1000) + "s...",
-          false
-        );
-        await new Promise(resolve => setTimeout(resolve, waitMs));
+      if (!shouldTryPost) {
+        throw getErr;
       }
+
+      console.log("Falling back to POST route for generateBilling...");
+      result = await apiPost({ action: "generateBilling" });
+      lastError = null;
     }
 
     if (lastError) {
@@ -785,7 +765,6 @@ async function generateBilling() {
       false
     );
 
-    // Refresh all related data
     await Promise.allSettled([
       loadBilling(),
       loadBillingSummary(),
