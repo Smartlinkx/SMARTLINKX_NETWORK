@@ -705,13 +705,14 @@ let isGeneratingBilling = false;
 
 async function generateBilling() {
   const btn = document.getElementById("generateBillingBtn");
-  const originalText = btn ? btn.textContent : "";
+  const originalText = btn ? btn.textContent : "Generate Billing";
 
   try {
     if (btn) {
       btn.disabled = true;
       btn.textContent = "Generating...";
     }
+
     showMessage("billingMessage", "Generating monthly billing... Please wait.", false);
 
     let result = null;
@@ -720,30 +721,44 @@ async function generateBilling() {
 
     for (let attempt = 1; attempt <= maxRetries; attempt++) {
       try {
-        console.log(`generateBilling attempt ${attempt}/${maxRetries}`);
+        console.log("generateBilling attempt " + attempt + "/" + maxRetries);
+
+        // Try POST first
         result = await apiPost({ action: "generateBilling" });
         lastError = null;
-        break; // success — exit retry loop
+        break;
+
       } catch (err) {
         lastError = err;
-        console.warn(`generateBilling attempt ${attempt} failed:`, err.message);
+        console.warn("Attempt " + attempt + " failed:", err.message);
 
         const isRetryable =
-          err.message.includes("Empty response") ||
-          err.message.includes("returned HTML") ||
+          err.message === "EMPTY_RESPONSE" ||
+          err.message === "HTML_RESPONSE" ||
           err.message.includes("Failed to fetch") ||
-          err.message.includes("NetworkError");
+          err.message.includes("NetworkError") ||
+          err.message.includes("Load failed");
 
         if (!isRetryable || attempt === maxRetries) break;
 
-        // Wait before retrying (exponential backoff)
+        // Try GET fallback on retry
+        try {
+          console.log("Trying GET fallback for generateBilling...");
+          result = await apiGet({ action: "generateBilling" });
+          lastError = null;
+          break;
+        } catch (getErr) {
+          console.warn("GET fallback also failed:", getErr.message);
+          lastError = getErr;
+        }
+
         const waitMs = attempt * 2000;
         showMessage(
           "billingMessage",
-          `Attempt ${attempt} failed. Retrying in ${waitMs / 1000}s...`,
+          "Attempt " + attempt + " failed. Retrying in " + (waitMs / 1000) + "s...",
           false
         );
-        await new Promise((resolve) => setTimeout(resolve, waitMs));
+        await new Promise(resolve => setTimeout(resolve, waitMs));
       }
     }
 
@@ -761,28 +776,33 @@ async function generateBilling() {
     }
 
     const created = result?.data?.total_created ?? 0;
+    const skipped = result?.data?.total_skipped ?? 0;
+
     showMessage(
       "billingMessage",
-      `Billing generated successfully. ${created} new record(s) created.`,
+      "Billing generated successfully. " + created + " new record(s) created. " + skipped + " skipped.",
       false
     );
 
+    // Refresh all related data
     await Promise.allSettled([
       loadBilling(),
       loadBillingSummary(),
-      loadSubscribers()
+      loadSubscribers(),
+      loadDashboard()
     ]);
+
   } catch (err) {
     console.error("generateBilling error:", err);
     showMessage(
       "billingMessage",
-      `Error: ${err.message || "Unable to generate billing."}`,
+      "Error: " + (err.message || "Unable to generate billing."),
       true
     );
   } finally {
     if (btn) {
       btn.disabled = false;
-      btn.textContent = originalText || "Generate Billing";
+      btn.textContent = originalText;
     }
   }
 }
