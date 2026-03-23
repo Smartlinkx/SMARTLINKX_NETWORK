@@ -733,8 +733,9 @@ async function generateBilling() {
         console.warn("Attempt " + attempt + " failed:", err.message);
 
         const isRetryable =
-          err.message === "EMPTY_RESPONSE" ||
-          err.message === "HTML_RESPONSE" ||
+          err.message.includes("EMPTY_RESPONSE") ||
+          err.message.includes("HTML_RESPONSE") ||
+          err.message.includes("empty/HTML response") ||
           err.message.includes("Failed to fetch") ||
           err.message.includes("NetworkError") ||
           err.message.includes("Load failed");
@@ -789,7 +790,7 @@ async function generateBilling() {
       loadBilling(),
       loadBillingSummary(),
       loadSubscribers(),
-      loadDashboard()
+      loadDashboardSummary()
     ]);
 
   } catch (err) {

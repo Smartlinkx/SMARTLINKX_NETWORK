@@ -8,7 +8,7 @@ const API_STORAGE_KEY = "smartlinkx_api_base_url";
   const storedApiBase = localStorage.getItem(API_STORAGE_KEY)?.trim();
 
   if (!window.APP_CONFIG.API_BASE_URL) {
-    window.APP_CONFIG.API_BASE_URL = metaApiBase || storedApiBase || DEFAULT_API_BASE_URL;
+    window.APP_CONFIG.API_BASE_URL = metaApiBase || storedApiBase || (typeof DEFAULT_API_BASE_URL !== "undefined" ? DEFAULT_API_BASE_URL : "");
   }
 
   if (window.APP_CONFIG.API_BASE_URL) {
@@ -42,11 +42,15 @@ async function parseApiResponse(response, method, payload) {
 
   if (!trimmed) {
     const action = payload?.action ? ` for action "${payload.action}"` : "";
-    throw new Error("EMPTY_RESPONSE" + action);
+    const err = new Error("EMPTY_RESPONSE");
+    err.action = payload?.action || "";
+    throw err;
   }
 
   if (trimmed.startsWith("<!DOCTYPE") || trimmed.startsWith("<html")) {
-    throw new Error("HTML_RESPONSE");
+    const err = new Error("HTML_RESPONSE");
+    err.action = payload?.action || "";
+    throw err;
   }
 
   let data;
@@ -138,10 +142,10 @@ async function apiRequest(method, payload = null) {
 
       // For write actions, throw clean error
       if (isWriteAction && isEmptyOrHtml) {
-        throw new Error(
-          `Action "${actionName}" got an empty/HTML response. ` +
-          `Retrying... If this persists, check your Apps Script deployment.`
-        );
+        const cleanErr = new Error(`Action "${actionName}" got an empty/HTML response. Check your Apps Script deployment.`);
+        cleanErr.code = "EMPTY_OR_HTML_RESPONSE";
+        cleanErr.action = actionName;
+        throw cleanErr;
       }
 
       throw postErr;
